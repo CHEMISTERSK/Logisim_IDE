@@ -1,0 +1,8 @@
+{
+    "arch": "4x8",
+    "cpu": "vn16",
+    
+    "address_bits": 4,
+    "data_bits": 8,
+    "ram_registers": 16
+}
