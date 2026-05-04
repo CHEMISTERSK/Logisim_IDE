@@ -63,7 +63,7 @@ def compiler(file_name: str, cpu: str) -> str:
         operand = ""
         operation = ""
 
-        if code_line.strip().upper() in ["END", "OUT"]:
+        if code_line.strip().upper() in ins["non-op"]:
             operation = code_line.strip()
         
         else:
@@ -75,7 +75,7 @@ def compiler(file_name: str, cpu: str) -> str:
                 except ValueError:
                     raise SyntaxError(f"\nSyntaxError:\n\tInvalid instruction syntax: {code_line!r}\n\tReturn code 1\n")
         
-        if operation.upper() in ["END", "OUT"] or operand == "":
+        if operation.upper() in ins["non-op"] or operand == "":
             operand = "0"
 
         if (int(operand) > (2 ** hw_dep["address_bits"]) - 1):
@@ -136,7 +136,7 @@ def compiler(file_name: str, cpu: str) -> str:
             comment, line = line.split("\n")
             line = line.strip()
 
-        if line.upper() in ["END", "OUT"] or line == "":
+        if line.upper() in ins["non-op"] or line == "":
             continue
         else:
             try:
