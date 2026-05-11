@@ -5,10 +5,12 @@ from PIL import Image
 
 from virtual_cpu_compiler import compiler
 
-root  =  CTk()
+root = CTk()
 root.geometry("1920x1080")
 root.title("Virtual CPU IDE")
 root.after(25, lambda: root.state("zoomed"))
+
+ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}\\projects"
 
 
 def scale(root):
@@ -21,9 +23,14 @@ def create_file() -> None:
     with open(f"{os.path.dirname(os.path.abspath(__file__))}\\projects\\newfile.txt", "w"):
             pass
 
+def create_folder(folder: str = "new_folder") -> None:
+     Path(ROOT_DIR + "\\" + folder).mkdir(parents = True, exist_ok = True)
+
+
 compile_icon_path = Path(__file__).with_name("icons") / "compile_icon.png"
 folder_icon_path = Path(__file__).with_name("icons") / "folder.png"
 new_file_icon_path = Path(__file__).with_name("icons") / "new_file.png"
+new_folder_icon_path = Path(__file__).with_name("icons") / "new_folder.png"
 
 compile_icon = CTkImage(light_image = Image.open(compile_icon_path),
                 dark_image = Image.open(compile_icon_path),
@@ -34,31 +41,29 @@ folder_icon = CTkImage(light_image = Image.open(folder_icon_path),
 new_file_icon = CTkImage(light_image = Image.open(new_file_icon_path),
                        dark_image = Image.open(new_file_icon_path),
                        size = (25, 25))
-
+new_folder_icon = CTkImage(light_image = Image.open(new_folder_icon_path),
+                       dark_image = Image.open(new_folder_icon_path),
+                       size = (25, 25))
 
 terminal_frame = CTkFrame(root,
                     width = 1135,
                     height = 230,
                     border_width = 2.5,
-                    border_color = "white"
-                    )
+                    border_color = "white")
 
 terminal_cards = CTkFrame(terminal_frame,
                           width = 1120,
-                          height = 30
-                          )
+                          height = 30)
 
 terminal = CTkTextbox(terminal_frame,
                       width = 1120,
                       height = 150,
                       state = "disabled",
-                      font = ("Consolas", 12)
-                      )
+                      font = ("Consolas", 12))
 
 terminal_input = CTkEntry(terminal_frame,
                           width = 1120,
-                          height = 30
-                          )
+                          height = 30)
 
 
 def compilation():
@@ -71,8 +76,7 @@ work_space = CTkFrame(root,
                       width = 1135,
                       height = 550,
                       border_width = 2.5,
-                      border_color = "white"
-                      )
+                      border_color = "white")
 
 hot_bar = CTkFrame(work_space,
                    width = 1075,
@@ -87,16 +91,14 @@ compile_button = CTkButton(work_space,
 
 editor = CTkTextbox(work_space,
                     width = 1120,
-                    height = 495
-                    )
+                    height = 495)
 
 
 file_explorer = CTkFrame(root,
                          width = 384,
                          height = 785,
                          border_width  =  2.5,
-                         border_color  =  "white" 
-                         )
+                         border_color  =  "white" )
 
 path_link = CTkButton(file_explorer,
                       text = "Open Projects Folder ",
@@ -104,16 +106,21 @@ path_link = CTkButton(file_explorer,
                       width = 120,
                       height = 30,
                       image = folder_icon,
-                      command = lambda: os.startfile(f"{os.path.dirname(os.path.abspath(__file__))}\\projects")
-                      )
+                      command = lambda: os.startfile(f"{os.path.dirname(os.path.abspath(__file__))}\\projects"))
 
 new_file = CTkButton(file_explorer,
                      text = "",
                      width = 30,
                      height = 30,
                      image = new_file_icon,
-                     command = lambda: create_file()
-                     )
+                     command = lambda: create_file())
+
+new_folder = CTkButton(file_explorer,
+                     text = "",
+                     width = 30,
+                     height = 30,
+                     image = new_folder_icon,
+                     command = lambda: create_folder())
 
 
 # root grid init
@@ -128,10 +135,12 @@ root.grid_rowconfigure(1, weight = 1)
 file_explorer.grid(row = 0, column = 0, rowspan = 2, sticky = "nsew", padx = 10, pady = 10)
 
 path_link.grid(row = 0, column = 0, sticky = "nw", padx = (10, 5), pady = 10)
+
 new_file.grid(row = 0, column = 1, sticky = "nw", padx = 5, pady = 10)
+new_folder.grid(row = 0, column = 2, sticky = "nw", padx = 5, pady = 10)
 
 
-# code workspace
+# codeing workspace
 work_space.grid(row = 0, column = 1, sticky = "nsew", padx =  10, pady = 10)
 
 work_space.grid_columnconfigure(0, weight = 1)
