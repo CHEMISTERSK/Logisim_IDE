@@ -1,4 +1,4 @@
-import json
+import subprocess
 import os
 from customtkinter import *
 from pathlib import Path
@@ -134,7 +134,7 @@ terminal_input = CTkEntry(terminal_frame,
 
 def compilation():
     terminal.configure(state = "normal")
-    terminal.insert("end", f"\n{compiler("pro", "4x8_vn16")}")
+    terminal.insert("end", f"\n{subprocess.run(["python", "virtual_cpu_compiler.py", "--file", "pro", "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
     terminal.configure(state = "disabled")
 
 
@@ -229,7 +229,7 @@ def create_file() -> None:
 
 def create_folder(folder: str = "new_folder") -> None:
     selected_path = get_selected_path()
-    Path(os.path.join(selected_path, folder)).mkdir(parents=True, exist_ok=True)
+    Path(os.path.join(selected_path, folder)).mkdir(parents = True, exist_ok = True)
     refresh_tree()
 
 def explorer(work_dir: list[str]) -> list[str]:

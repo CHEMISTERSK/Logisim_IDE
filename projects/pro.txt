@@ -1,23 +1,23 @@
 // init 1st number
-ldi 5;
-str 11;
+    ldi 5;
+    str 11;
 
 // init 2nd number
-ldi 10;
-str 12;
+    ldi 10;
+    str 12;
 
 // arithmetics
-lda 11;
-add 12;
-sub 15;
-add 14;
+    lda 11;
+    add 12;
+    sub 15;
+    add 14;
 
 // init output
-out; 
+    out; 
 
 // def 8-bit values
-val 10;
-val 8;
+    val 10;
+    val 8;
 
 // end of program
-end;
+    end;
