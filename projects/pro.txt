@@ -1,23 +1,18 @@
-// init 1st number
-    ldi 5;
-    str 11;
 
-// init 2nd number
-    ldi 10;
-    str 12;
+ldi 2;
+str 10;
 
-// arithmetics
-    lda 11;
-    add 12;
-    sub 15;
-    add 14;
+test:
+    ldi 1;
+    add 15;
+    str 10;
+    //ret;
 
-// init output
-    out; 
+test;
+test;
+test;
+end;
 
-// def 8-bit values
-    val 10;
-    val 8;
-
-// end of program
-    end;
+val 150;
+val 127;
+val 255;

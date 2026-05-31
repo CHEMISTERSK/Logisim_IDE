@@ -1,7 +1,5 @@
 import json, os, argparse
 
-
-
 class OperandOutOfRangeError(ValueError):
     pass
 class MemoryOverflowError(ValueError):
@@ -13,10 +11,10 @@ class InstructionOverwriteError(ValueError):
 class CPUModuleNotFoundError(FileNotFoundError):
     pass
 
-def load(project_name: str = None) -> str:
+def load(project_name: str = None) -> list[str]:
     try:
         with open(f"{os.path.dirname(os.path.abspath(__file__))}\\projects\\{project_name}.txt", "r") as project_file:
-            return project_file.read()
+            return project_file.readlines()
     except FileNotFoundError:
         raise FileNotFoundError(f"\nFileNotFoundError:\n\tFile named '{project_name}' doesn't exist!\n\tReturn code 1\n")
 
@@ -36,10 +34,10 @@ def save(bin_code: list[str], hex_code: list[str], location: str, name: str) -> 
 
     with open(f"{os.path.dirname(os.path.abspath(__file__))}\\outputs\\hex\\{location}\\{name}.hex", "w") as hex_file:
         hex_file.writelines(hex_code)
-
+ 
 def compiler(file_name: str, cpu: str) -> str:
 
-# Loading Instruction set and Hardware Dependencies
+# Loading Instruction Set and Hardware Dependencies
     hw_dep = load_json(cpu, "hardware_dependencies")
     ins = load_json(cpu, "instructions")
 
@@ -52,93 +50,87 @@ def compiler(file_name: str, cpu: str) -> str:
         if (hw_dep["cpu"] != ins["cpu"]):
             err = [f"CPU Type: {ins["cpu"]}", f"CPU Type: {hw_dep["cpu"]}"]
         raise InstructionSetArchitectureMismatchError(f"\nInstructionSetArchitectureMismatchError:\n\tinstructions target '{err[0]}', but hardware dependencies define '{err[1]}'\n\tReturn code 1\n")
-
+    
 # init compiling variables
     code_length = 2**hw_dep["address_bits"]
-    used_mem = {"bytes": 0, "add": []}
-    asm_code = load(file_name)
+    used_mem = {"bytes": 0, "addr": []}
+    current_addr = 0
+    functions: dict = {}
+    asm_lines = load(file_name)
     values = []
     bin_compiled_code, hex_compiled_code = [], []
     TAB = "    "
-    code_lines = asm_code.split(";")
 
-    def compile_to_machine(code_line: str) -> str:
-        operand = ""
-        operation = ""
+# start of compiling cycle
+    for line in asm_lines:
+        line = (line.strip()).replace(TAB, "")
 
-        if code_line.strip().upper() in ins["non-op"]:
-            operation = code_line.strip()
-        
-        else:
-            if code_line != "":
-                try:
-                    operation, operand = code_line.split(" ")
-                    if operation.upper() == "STR" and operand not in used_mem["add"]:
-                        used_mem["add"].append(operand)
-                except ValueError:
-                    raise SyntaxError(f"\nSyntaxError:\n\tInvalid instruction syntax: {code_line!r}\n\tReturn code 1\n")
-        
-        if operation.upper() in ins["non-op"] or operand == "":
-            operand = "0"
+    # cheking if the line is commentary
+        if line[0:2] == '//' or line == "":
+            continue
 
-        if (int(operand) > (2 ** hw_dep["address_bits"]) - 1):
-            raise OperandOutOfRangeError(f"\nOperandOutOfRangeError: {operation} {operand}; <- Value must be in range 0-{2**hw_dep['address_bits'] - 1}\nReturn code 1\n")
+    # checking if line is label (function)
+        if line[-1] == ":":
+            functions[line[:-1].upper()] = current_addr + 1
+            continue
 
-        return f"{ins[operation.upper()]}{format(int(operand), f"0{hw_dep['address_bits']}b")}"
+    # compiling assembly code to machine code
+        if line[-1] == ";":
+            line = line[:-1].strip()
 
-    try:
-        for line in code_lines:
-            line = line.replace(TAB, "")
-            line = line.strip()
+            try:
+                operation, operand = line.split(" ")
+            except ValueError:
+                operation = line
+                operand = None
 
-        # Ingnoreing Commentars
-            if line[:2] == "//":
-                try:
-                    comment, line = line.split("\n")
-                except ValueError:
-                    raise SyntaxError(f"\n{line.replace("\n", " ")}; <- missing \';\' between instructions\nReturn code 1\nA")
+        # cheking if operand is in address range
+            if operand != None:
+                if int(operand) >= 2**hw_dep["address_bits"] and operation.upper() != "VAL":
+                    raise OperandOutOfRangeError(f"\nOperandOutOfRangeError: {operation} {operand}; <- Value must be in range 0-{2**hw_dep['address_bits'] - 1}\nReturn code 1\n")
 
-        # Syntax Check
-            if line.count(" ") > 1:
-                raise SyntaxError(f"\n{line.replace("\n", " ")}; <- missing \';\' between instructions\nReturn code 1\nB")
+            # saveing Store (STR) adresses for check if it owerwrites instructions
+                if operation.upper() == "STR" and operand not in used_mem["addr"]:
+                        used_mem["addr"].append(operand)
             
-        # Code Compileing
-            if (line != "") and (line[:3].upper() != "VAL"):
-                bin_compiled_code.append(compile_to_machine(line) + "\n")
-                hex_compiled_code.append(f"{format(int(compile_to_machine(line), 2), f"0{int(hw_dep['data_bits'] / 4)}x")}\n")
-                
-                if line[:3].upper() == "STR":
-                    used_mem["bytes"] += 1
+            # ignoring VAL operations
+                if operation.upper() != "VAL":
+                    bin_compiled_code.append(f"{ins[operation.upper()]}{format(int(operand), f"0{hw_dep['address_bits']}b")}\n")
 
-                code_length -= 1
+        # compileing instructions and labels (functions)
+            else:
+                try:
+                    bin_compiled_code.append(f"{ins[operation.upper()]}{"0" * hw_dep['address_bits']}\n")
+                except KeyError:
+                    try:
+                        bin_compiled_code.append(f"{ins["JMP"]}{format(functions[operation.upper()], f"0{hw_dep['address_bits']}b")}\n")
+                    except KeyError:
+                        raise SyntaxError(f"\nCode name: \"{operation}\" is not defined!\nReturn code 1\n")
+    # syntax check 
+        else:
+            raise SyntaxError(f"\n{line.replace("\n", "")} <- missing \';\' between instructions\nReturn code 1\n")
+        
+        if operation.upper() == "VAL":
+            break
+        
+        code_length -= 1
+        current_addr += 1
 
-            # code length check
-                if code_length < 0:
-                    raise MemoryOverflowError(f"\nMemoryOverflowError:\n\tInsufficient memory to write code\n\tMaximum instructions {2**hw_dep['address_bits']}\n\tReturn code 1")
-                
-    except TypeError:
-        raise SyntaxError(f"\n{line.replace("\n", " ")}; <- missing \';\' between instructions\nReturn code 1\nC")
+    # checking for memory overflow
+        if code_length < 0:
+            raise MemoryOverflowError(f"\nMemoryOverflowError:\n\tInsufficient memory to write code\n\tMaximum instructions {len(asm_lines)}/{2**hw_dep['address_bits']}\n\tReturn code 1")
+    
+# filling rest of memory with 0's
+    for _ in range(2**hw_dep['address_bits'] - current_addr):
+        bin_compiled_code.append("00000000\n")
 
-    for _ in range(code_length):
-        bin_compiled_code.append("0" * hw_dep["data_bits"] + "\n")
-        hex_compiled_code.append("0" * int(hw_dep["data_bits"] / 4) + "\n")
 
-# self-modifying check
-    for address in used_mem["add"]:
-        if bin_compiled_code[int(address)] != ("0" * hw_dep["data_bits"] + "\n"):
-            raise InstructionOverwriteError(f"\nInstructionOverwriteError:"
-                                            f"\n\tAttempt to write to address {address}, which contains an instruction"
-                                            f"\n\tRuntime write would overwrite program code"
-                                            f"\n\tReturn code 1\n")
-
-# Compiling Values (VAL)
-    for line in code_lines:
+    for line in asm_lines:
         line = line.strip()
 
-    # Ingnoreing Commentars
-        if len(line) >= 2 and line[:2] == "//":
-            comment, line = line.split("\n")
-            line = line.strip()
+    # Ingnoring Commentars
+        if line[:2] == "//":
+            continue
 
         if line.upper() in ins["non-op"] or line == "":
             continue
@@ -146,14 +138,22 @@ def compiler(file_name: str, cpu: str) -> str:
             try:
                 operation, operand = line.split(" ")
             except ValueError:
-                raise SyntaxError(f"\n{line.replace("\n", " ")}; <- missing \';\' between instructions\nReturn code 1\nD")
+                try:
+                    functions[line[:-1].upper()]
+                    continue
+                except KeyError:
+                    try:
+                        ins[line[:-1].upper()]
+                        continue
+                    except KeyError:
+                        raise SyntaxError(f"\n{line.replace("\n", " ")} <- missing \';\' between instructions\nReturn code 1\n")
     
     # evaluating VAL expressions
         if operation.upper() == "VAL":
-                if int(operand) < 2**hw_dep["data_bits"]:
-                    values.append(int(operand))
+                if int(operand[:-1]) < 2**hw_dep["data_bits"]:
+                    values.append(int(operand[:-1]))
                 else:
-                    raise MemoryOverflowError(f"\nMemoryOverflowError:\n\tMaximum value exceeded! \"{operation} {operand};\"\n\tVAL operand must be in range 0-{2**hw_dep['data_bits'] - 1}\n\tReturn code 1\n")
+                    raise MemoryOverflowError(f"\nMemoryOverflowError:\n\tMaximum value exceeded! \"{operation} {operand[:-1]};\"\n\tVAL operand must be in range 0-{2**hw_dep['data_bits'] - 1}\n\tReturn code 1\n")
 # memory checks
     if 0 == code_length - (len(values)):
         warning = f"\nMemoryUsageWarning:"\
@@ -171,24 +171,20 @@ def compiler(file_name: str, cpu: str) -> str:
 
 # writeing VAL expressions into the memory !
     for i in range(len(values)):
-        bin_compiled_code[-(i + 1)] = str(format(values[i], f"0{hw_dep['data_bits']}b")) + "\n"
-        hex_compiled_code[-(i + 1)] = str(format(values[i], f"0{int(hw_dep['data_bits'] / 4)}x")) + "\n"
-    
-    save(bin_compiled_code, hex_compiled_code, cpu, file_name)
+        bin_compiled_code[2**hw_dep["address_bits"] - len(values) + i] = str(format(values[i], f"0{hw_dep['data_bits']}b")) + "\n"
 
-    return f"{warning}\nCode Successfully Compiled!\n\tSize: {len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")} bytes - Memory Usage {int(((len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")) / hw_dep["ram_registers"] * 100))}%\n\tReturn code 0\n"
+    hex_compiled_code = [format(int(x, 2), f"0{int(hw_dep['data_bits'] / 4)}x") + "\n" for x in bin_compiled_code]
+
+    save(bin_compiled_code, hex_compiled_code, cpu, file_name)
+        
+    print(f"{warning}\nCode Successfully Compiled!\n\tSize: {len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")} bytes - Memory Usage {int(((len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")) / hw_dep["ram_registers"] * 100))}%\n\tReturn code 0\n")
 
 if __name__ == "__main__":
-    try:
-        parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-        parser.add_argument("--file")
-        parser.add_argument("--cpu")
+    parser.add_argument("--file")
+    parser.add_argument("--cpu")
 
-        args = parser.parse_args()
+    args = parser.parse_args()
 
-        return_message = compiler(args.file, args.cpu)
-
-        print(return_message)
-    except Exception as e:
-        print(e)
+    compiler(args.file, args.cpu)

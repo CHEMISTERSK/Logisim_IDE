@@ -134,6 +134,7 @@ terminal_input = CTkEntry(terminal_frame,
 
 def compilation():
     terminal.configure(state = "normal")
+    terminal.insert("end", "@> python virtual_cpu_compiler.py --file pro.txt --cpu 4x8_vn16")
     terminal.insert("end", f"\n{subprocess.run(["python", "virtual_cpu_compiler.py", "--file", "pro", "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
     terminal.configure(state = "disabled")
 
