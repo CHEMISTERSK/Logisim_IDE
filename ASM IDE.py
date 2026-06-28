@@ -1,5 +1,5 @@
 import subprocess
-import os
+import os, shutil
 from customtkinter import *
 from pathlib import Path
 from PIL import Image
@@ -295,7 +295,7 @@ def del_file() -> None:
     global active_file
 
     if active_file is None:
-        os.rmdir(get_selected_path())
+        shutil.rmtree(get_selected_path())
     else:
         os.remove(active_file)
         print(active_file)

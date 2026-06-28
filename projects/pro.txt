@@ -1,15 +1,15 @@
 fibonachi:
-    lda 14;
-    add 15;
+	lda 14;
+	add 15;
 
-    str 13;
+	str 13;
 
-    lda 15;
-    str 14;
-    lda 13;
-    str 15;
+	lda 15;
+	str 14;
+	lda 13;
+	str 15;
 
-    ret;
+	ret;
 
 fibonachi;
 fibonachi;

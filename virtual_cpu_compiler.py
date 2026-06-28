@@ -13,7 +13,7 @@ class CPUModuleNotFoundError(FileNotFoundError):
 
 def load(project_name: str = None) -> list[str]:
     try:
-        with open(f"{os.path.dirname(os.path.abspath(__file__))}\\projects\\{project_name}.txt", "r") as project_file:
+        with open(f"{os.path.dirname(os.path.abspath(__file__))}\\projects\\{project_name}", "r") as project_file:
             return project_file.readlines()
     except FileNotFoundError:
         raise FileNotFoundError(f"\nFileNotFoundError:\n\tFile named '{project_name}' doesn't exist!\n\tReturn code 1\n")
