@@ -169,7 +169,7 @@ def compiler(file_name: str, cpu: str) -> str:
     else:
         warning = ""
 
-# writeing VAL expressions into the memory !
+# writeing VAL expressions into the memory!
     for i in range(len(values)):
         bin_compiled_code[2**hw_dep["address_bits"] - len(values) + i] = str(format(values[i], f"0{hw_dep['data_bits']}b")) + "\n"
 
@@ -179,6 +179,7 @@ def compiler(file_name: str, cpu: str) -> str:
         
     print(f"{warning}\nCode Successfully Compiled!\n\tSize: {len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")} bytes - Memory Usage {int(((len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")) / hw_dep["ram_registers"] * 100))}%\n\tReturn code 0\n")
 
+'''
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -188,3 +189,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     compiler(args.file, args.cpu)
+'''
+compiler("pro", "4x8_vn16")

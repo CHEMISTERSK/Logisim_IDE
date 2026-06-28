@@ -24,7 +24,7 @@ def scale(root):
 
 def refresh_tree():
     tree.delete(*tree.get_children())
-    root_node = tree.insert("", "end", text="projects\\", open=True)
+    root_node = tree.insert("", "end", text = ROOT_DIR.capitalize() + "\\", open = True)
     insert_files(root_node, ROOT_DIR)
 
 
@@ -163,7 +163,7 @@ editor = CTkTextbox(work_space,
 
 
 # Pridanie root priečinka
-root_node = tree.insert("", "end", text = "projects\\", open = True)
+root_node = tree.insert("", "end", text = ROOT_DIR.capitalize() + "\\", open = True)
 
 def insert_files(parent, path):
     try:

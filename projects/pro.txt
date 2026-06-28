@@ -1,18 +1,24 @@
 
-ldi 2;
-str 10;
 
-test:
-    ldi 1;
+fibonachi:
+    lda 14;
     add 15;
-    str 10;
-    //ret;
 
-test;
-test;
-test;
+    str 13;
+
+    lda 15;
+    str 14;
+    lda 13;
+    str 15;
+
+    ret;
+
+fibonachi;
+fibonachi;
+fibonachi;
 end;
 
-val 150;
-val 127;
-val 255;
+// value 0 is on address 14
+val 0;
+// value 1 is on address 15
+val 1;
