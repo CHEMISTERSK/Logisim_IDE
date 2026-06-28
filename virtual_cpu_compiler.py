@@ -179,7 +179,7 @@ def compiler(file_name: str, cpu: str) -> str:
         
     print(f"{warning}\nCode Successfully Compiled!\n\tSize: {len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")} bytes - Memory Usage {int(((len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")) / hw_dep["ram_registers"] * 100))}%\n\tReturn code 0\n")
 
-'''
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -189,5 +189,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     compiler(args.file, args.cpu)
-'''
-compiler("pro", "4x8_vn16")
+

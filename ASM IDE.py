@@ -14,6 +14,7 @@ root.after(25, lambda: root.state("zoomed"))
 
 ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}\\projects"
 work_dir: list[str] = []
+active_file = None
 
 def scale(root):
     dpi_scale  =  root.winfo_fpixels('1i') / 72
@@ -33,7 +34,9 @@ compile_icon_path = Path(__file__).with_name("icons") / "compile_icon.png"
 folder_icon_path = Path(__file__).with_name("icons") / "folder.png"
 new_file_icon_path = Path(__file__).with_name("icons") / "new_file.png"
 new_folder_icon_path = Path(__file__).with_name("icons") / "new_folder.png"
+delete_file_icon_path = Path(__file__).with_name("icons") / "delete_file.png"
 refresh_file_explorer_icon_path = Path(__file__).with_name("icons") / "refresh.png"
+
 
 compile_icon = CTkImage(light_image = Image.open(compile_icon_path),
                 dark_image = Image.open(compile_icon_path),
@@ -47,6 +50,9 @@ new_file_icon = CTkImage(light_image = Image.open(new_file_icon_path),
 new_folder_icon = CTkImage(light_image = Image.open(new_folder_icon_path),
                            dark_image = Image.open(new_folder_icon_path),
                            size = (25, 25))
+delete_file_icon = CTkImage(light_image = Image.open(delete_file_icon_path),
+                            dark_image = Image.open(delete_file_icon_path),
+                            size = (25, 25))
 refresh_file_explorer_icon = CTkImage(light_image = Image.open(refresh_file_explorer_icon_path),
                                       dark_image = Image.open(refresh_file_explorer_icon_path),
                                       size = (25, 25))
@@ -65,6 +71,13 @@ path_link = CTkButton(file_explorer,
                       height = 30,
                       image = folder_icon,
                       command = lambda: os.startfile(f"{os.path.dirname(os.path.abspath(__file__))}\\projects"))
+
+delete_file = CTkButton(file_explorer,
+                        text = "",
+                        width = 30,
+                        height = 30,
+                        image = delete_file_icon,
+                        command = lambda: del_file())
 
 new_file = CTkButton(file_explorer,
                      text = "",
@@ -108,7 +121,7 @@ style.map('Treeview',
 
 # Treeview pre stromovú štruktúru
 tree = ttk.Treeview(file_explorer, style = "Treeview")
-tree.grid(row = 1, column = 0, columnspan = 4, sticky = "nsew", padx = 5, pady = (0, 5))
+
 
 
 terminal_frame = CTkFrame(root,
@@ -133,10 +146,12 @@ terminal_input = CTkEntry(terminal_frame,
 
 
 def compilation():
-    terminal.configure(state = "normal")
-    terminal.insert("end", "@> python virtual_cpu_compiler.py --file pro.txt --cpu 4x8_vn16")
-    terminal.insert("end", f"\n{subprocess.run(["python", "virtual_cpu_compiler.py", "--file", "pro", "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
-    terminal.configure(state = "disabled")
+    global active_file
+    if active_file is not None:
+        terminal.configure(state = "normal")
+        terminal.insert("end", f"@> python virtual_cpu_compiler.py --file {active_file.split("\\")[-1]} --cpu 4x8_vn16")
+        terminal.insert("end", f"\n{subprocess.run(["python", "virtual_cpu_compiler.py", "--file", active_file.split("\\")[-1], "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
+        terminal.configure(state = "disabled")
 
 
 work_space = CTkFrame(root,
@@ -197,29 +212,72 @@ def open_node(event):
 tree.bind("<<TreeviewOpen>>", open_node)
 
 
-def get_selected_path():
-    """Zistí cestu vybraného priečinka v strome"""
+def get_selected_item_path():
     selected_node = tree.focus()
-    
+
     if not selected_node:
-        return ROOT_DIR
-    
-    # Rekonstruuj cestu z hierarchie
+        return None
+
     path_parts = []
     current = selected_node
     while current:
         item_text = tree.item(current, "text").rstrip("\\")
-        if item_text != "projects":  # Preskoči root
+        if item_text != "projects":
             path_parts.insert(0, item_text)
         current = tree.parent(current)
-    
-    full_path = os.path.join(ROOT_DIR, *path_parts)
-    
-    # Ak je to súbor, vráť jeho priečinok
-    if os.path.isfile(full_path):
-        return os.path.dirname(full_path)
-    
-    return full_path if os.path.isdir(full_path) else ROOT_DIR
+
+    return os.path.join(ROOT_DIR, *path_parts)
+
+
+def load_active_file() -> None:
+    global active_file
+    global editor
+
+    if active_file is None:
+        pass
+    else:
+        with open(active_file, "r") as file:
+            editor.delete("1.0", "end")
+            editor.insert("end", file.read())
+
+
+def save_active_file(event=None):
+    if active_file is None:
+        return "break"
+
+    with open(active_file, "w") as file:
+        file.write(editor.get("1.0", "end-1c"))
+
+    return "break"
+
+
+def get_selected_path():
+    """Zistí cestu vybraného priečinka v strome"""
+    selected_path = get_selected_item_path()
+
+    if not selected_path:
+        return ROOT_DIR
+
+    if os.path.isfile(selected_path):
+        return os.path.dirname(selected_path)
+
+    return selected_path if os.path.isdir(selected_path) else ROOT_DIR
+
+
+def update_active_file(event=None):
+    global active_file
+
+    selected_path = get_selected_item_path()
+    if selected_path and os.path.isfile(selected_path):
+        active_file = selected_path
+    else:
+        active_file = None
+
+    load_active_file()
+
+tree.bind("<<TreeviewSelect>>", update_active_file)
+root.bind_all("<Control-s>", save_active_file)
+root.bind_all("<Control-S>", save_active_file)
 
 def create_file() -> None:
     selected_path = get_selected_path()
@@ -231,6 +289,16 @@ def create_file() -> None:
 def create_folder(folder: str = "new_folder") -> None:
     selected_path = get_selected_path()
     Path(os.path.join(selected_path, folder)).mkdir(parents = True, exist_ok = True)
+    refresh_tree()
+
+def del_file() -> None:
+    global active_file
+
+    if active_file is None:
+        os.rmdir(get_selected_path())
+    else:
+        os.remove(active_file)
+        print(active_file)
     refresh_tree()
 
 def explorer(work_dir: list[str]) -> list[str]:
@@ -267,9 +335,13 @@ file_explorer.grid_rowconfigure(1, weight = 1)
 # buttons
 path_link.grid(row = 0, column = 0, sticky = "nw", padx = (5, 2.5), pady = (5, 5))
 
-new_file.grid(row = 0, column = 1, sticky = "nw", padx = 2.5, pady = (5, 5))
-new_folder.grid(row = 0, column = 2, sticky = "nw", padx = 2.5, pady = (5, 5))
-refresh_file_explorer.grid(row = 0, column = 3, sticky = "nw", padx = (2.5, 5), pady = (5, 5))
+delete_file.grid(           row = 0, column = 1, sticky = "nw", padx = 2.5,         pady = (5, 5))
+new_file.grid(              row = 0, column = 2, sticky = "nw", padx = 2.5,         pady = (5, 5))
+new_folder.grid(            row = 0, column = 3, sticky = "nw", padx = 2.5,         pady = (5, 5))
+refresh_file_explorer.grid( row = 0, column = 4, sticky = "nw", padx = (2.5, 5),    pady = (5, 5))
+
+tree.grid(row = 1, column = 0, columnspan = 6, sticky = "nsew", padx = 5, pady = (0, 5))
+
 
 
 # codeing workspace
