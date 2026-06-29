@@ -13,7 +13,7 @@ class CPUModuleNotFoundError(FileNotFoundError):
 
 def load(project_name: str = None) -> list[str]:
     try:
-        with open(f"{os.path.dirname(os.path.abspath(__file__))}\\projects\\{project_name}", "r") as project_file:
+        with open(project_name, "r") as project_file:
             return project_file.readlines()
     except FileNotFoundError:
         raise FileNotFoundError(f"\nFileNotFoundError:\n\tFile named '{project_name}' doesn't exist!\n\tReturn code 1\n")
@@ -105,10 +105,10 @@ def compiler(file_name: str, cpu: str) -> str:
                     try:
                         bin_compiled_code.append(f"{ins["JMP"]}{format(functions[operation.upper()], f"0{hw_dep['address_bits']}b")}\n")
                     except KeyError:
-                        raise SyntaxError(f"\nCode name: \"{operation}\" is not defined!\nReturn code 1\n")
+                        raise SyntaxError(f"\nSyntaxError:\nCode name: \"{operation}\" is not defined!\nReturn code 1\n")
     # syntax check 
         else:
-            raise SyntaxError(f"\n{line.replace("\n", "")} <- missing \';\' between instructions\nReturn code 1\n")
+            raise SyntaxError(f"\nSyntaxError:\n{line.replace("\n", "")} <- missing \';\' between instructions\nReturn code 1\n")
         
         if operation.upper() == "VAL":
             break
@@ -146,7 +146,7 @@ def compiler(file_name: str, cpu: str) -> str:
                         ins[line[:-1].upper()]
                         continue
                     except KeyError:
-                        raise SyntaxError(f"\n{line.replace("\n", " ")} <- missing \';\' between instructions\nReturn code 1\n")
+                        raise SyntaxError(f"\nSyntaxError:\n{line.replace("\n", " ")} <- missing \';\' between instructions\nReturn code 1\n")
     
     # evaluating VAL expressions
         if operation.upper() == "VAL":
@@ -175,18 +175,20 @@ def compiler(file_name: str, cpu: str) -> str:
 
     hex_compiled_code = [format(int(x, 2), f"0{int(hw_dep['data_bits'] / 4)}x") + "\n" for x in bin_compiled_code]
 
-    save(bin_compiled_code, hex_compiled_code, cpu, file_name)
+    save(bin_compiled_code, hex_compiled_code, cpu, file_name.split('\\')[-1])
         
     print(f"{warning}\nCode Successfully Compiled!\n\tSize: {len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")} bytes - Memory Usage {int(((len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")) / hw_dep["ram_registers"] * 100))}%\n\tReturn code 0\n")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    try:
+        parser = argparse.ArgumentParser()
 
-    parser.add_argument("--file")
-    parser.add_argument("--cpu")
+        parser.add_argument("--file")
+        parser.add_argument("--cpu")
 
-    args = parser.parse_args()
+        args = parser.parse_args()
 
-    compiler(args.file, args.cpu)
-
+        compiler(args.file, args.cpu)
+    except Exception as e:
+        print(f"\nCompilation Faild: \n{e}")
