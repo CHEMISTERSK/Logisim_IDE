@@ -4,22 +4,16 @@ from pathlib import Path
 from PIL import Image
 from tkinter import ttk
 
-
+# Init
 root = CTk()
 root.geometry("1920x1080")
 root.title("Virtual CPU IDE")
+root.iconbitmap("C:\\Users\\vavro\\Documents\\VSCode\\Python\\Compiler\\icons\\icon.ico")
 root.after(25, lambda: root.state("zoomed"))
 
-ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}\\projects"
-work_dir: list[str] = []
+ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()
+work_dir = ROOT_DIR
 active_file = None
-
-# Setting resolution scale
-def scale(root):
-    dpi_scale  =  root.winfo_fpixels('1i') / 72
-
-    set_window_scaling(dpi_scale)
-    set_widget_scaling(dpi_scale)
 
 # Icon loading
 compile_icon_path = Path(__file__).with_name("icons") / "compile_icon.png"
@@ -103,6 +97,10 @@ terminal_working_path = CTkFrame(terminal_frame,
                                  width = 1120,
                                  height = 30)
 
+working_dir_label = CTkLabel(terminal_working_path,
+                             text = f"Working Directory: {work_dir}>",
+                             font = ("Consolas", 14, "bold"))
+
 terminal = CTkTextbox(terminal_frame,
                       width = 1120,
                       height = 150,
@@ -129,7 +127,7 @@ compile_button = CTkButton(work_space,
                            text = "",
                            width = 25,
                            height = 25,
-                           command = lambda: compilation(terminal))
+                           command = lambda: compilation())
 
 editor = CTkTextbox(work_space,
                     width = 1120,
@@ -155,9 +153,12 @@ style.map('Treeview',
           foreground = [('selected', 'white')])
 
 # Functions
-def compilation(terminal: CTkTextbox) -> None:
+def command_execution(command: str = None) -> None:
+    if command:
+        ...
+
+def compilation() -> None:
     global active_file
-    print(active_file)
     if active_file is not None:
         terminal.configure(state = "normal")
         terminal.insert("end", f"@> python C:\\Users\\vavro\\Documents\\VSCode\\Python\\Compiler\\vcc.pyw --file {active_file} --cpu 4x8_vn16")
@@ -192,7 +193,7 @@ def del_file() -> None:
 def explorer(work_dir: list[str]) -> list[str]:
     # Rekurzívne načíta štruktúru priečinkov a súborov
     try:
-        path = os.path.join(*work_dir) if work_dir else ROOT_DIR
+        path = os.path.join(*work_dir) if work_dir else ROOT_DIR + "\\projects"
         items = []
         for item in os.listdir(path):
             full_path = os.path.join(path, item)
@@ -219,19 +220,19 @@ def get_selected_item_path() -> None | Path:
             path_parts.insert(0, item_text)
         current = tree.parent(current)
 
-    return os.path.join(ROOT_DIR, *path_parts)
+    return os.path.join(ROOT_DIR + "\\projects", *path_parts)
 
 def get_selected_path() -> str:
     # Zistí cestu vybraného priečinka v strome
     selected_path = get_selected_item_path()
 
     if not selected_path:
-        return ROOT_DIR
+        return ROOT_DIR + "\\projects"
 
     if os.path.isfile(selected_path):
         return os.path.dirname(selected_path)
 
-    return selected_path if os.path.isdir(selected_path) else ROOT_DIR
+    return selected_path if os.path.isdir(selected_path) else ROOT_DIR + "\\projects"
 
 def insert_files(parent: str, path: str) -> None:
     try:
@@ -268,13 +269,13 @@ def open_node(event) -> None:
             path_parts.insert(0, tree.item(current, "text").rstrip("\\"))
             current = tree.parent(current)
         
-        path = os.path.join(ROOT_DIR, *path_parts[1:])
+        path = os.path.join(ROOT_DIR + "\\projects", *path_parts[1:])
         insert_files(node, path)
 
 def refresh_tree() -> None:
     tree.delete(*tree.get_children())
-    root_node = tree.insert("", "end", text = ROOT_DIR.capitalize() + "\\", open = True)
-    insert_files(root_node, ROOT_DIR)
+    root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects".capitalize() + "\\", open = True)
+    insert_files(root_node, ROOT_DIR + "\\projects")
 
 def save_active_file(event = None) -> str:
     if active_file is None:
@@ -298,12 +299,14 @@ def update_active_file(event = None) -> None:
     
 
 tree = ttk.Treeview(file_explorer, style = "Treeview")
-root_node = tree.insert("", "end", text = ROOT_DIR.capitalize() + "\\", open = True)
+root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects".capitalize() + "\\", open = True)
 
-insert_files(root_node, ROOT_DIR)
+insert_files(root_node, ROOT_DIR + "\\projects")
 
 tree.bind("<<TreeviewOpen>>", open_node)
 tree.bind("<<TreeviewSelect>>", update_active_file)
+
+# Key biding
 root.bind_all("<Control-s>", save_active_file)
 root.bind_all("<Control-S>", save_active_file)
 
@@ -352,6 +355,7 @@ terminal_frame.grid_columnconfigure(0, weight = 1)
 terminal_frame.grid_rowconfigure(1, weight = 1)
 
 terminal_working_path.grid(row = 0, column = 0, sticky = "ew", padx = 10, pady = (10, 2.5))
+working_dir_label.grid(row = 0, column = 0, sticky = "ew", padx = 10, pady = 5)
 terminal.grid(row = 1, column = 0, sticky = "nsew", padx = 10, pady = 5)
 terminal_input.grid(row = 2, column = 0, sticky = "ew", padx = 10, pady = (2.5, 10))
 
