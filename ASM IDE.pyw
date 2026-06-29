@@ -136,7 +136,6 @@ editor = CTkTextbox(work_space,
                     height = 495,
                     font = ('Consolas', 13))
 
-
 # Customizing treeview style for CTk
 style = ttk.Style()
 style.theme_use('clam')
