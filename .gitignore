@@ -39,3 +39,4 @@ tempCodeRunnerFile.py
 # Project specific
 **/projects/*.txt
 outputs/
+*.c

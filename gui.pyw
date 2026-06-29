@@ -8,11 +8,12 @@ from tkinter import ttk
 root = CTk()
 root.geometry("1920x1080")
 root.title("Virtual CPU IDE")
-root.iconbitmap("C:\\Users\\vavro\\Documents\\VSCode\\Python\\Compiler\\icons\\icon.ico")
+root.iconbitmap(f"{os.path.dirname(os.path.abspath(__file__))}\\icons\\icon.ico")
 root.after(25, lambda: root.state("zoomed"))
 
 ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()
 work_dir = ROOT_DIR
+imbeded_commands = {"clr", "cls"}
 active_file = None
 
 # Icon loading
@@ -154,17 +155,50 @@ style.map('Treeview',
 
 # Functions
 def command_execution(command: str = None) -> None:
+    global work_dir
+
     if command:
-        ...
+        terminal_input.delete("0", "end")
+        terminal.configure(state = "normal")
+        terminal.insert("end", f"@> {command}\n")
+
+        if command in imbeded_commands:
+            if command in ["cls", "clr"]:
+                terminal.delete("1.0", "end")
+        else:
+            if command.split(" ")[0] == "cd" and len(command.split(" ")) > 1:
+                if (os.path.exists(work_dir + "\\" + command.split(" ")[1]) == True or os.path.exists(command.split(" ")[1]) == True) and command.split(" ")[1].capitalize() != "C:":
+                    if "C:\\" in command.split(" ")[1].capitalize():
+                        work_dir = command.split(" ")[1]
+                    elif command.split(" ")[1][0:2].upper() == "..":
+                        work_dir_list = work_dir.split("\\")
+                        del work_dir_list[-1]
+                        work_dir = "\\".join(work_dir_list)
+                    else: 
+                        if command.split(" ")[1] != ".":
+                            work_dir = work_dir + "\\" + command.split(" ")[1]
+
+                working_dir_label.configure(text = f"Working Directory: {work_dir.capitalize()}>")
+                terminal.configure(state = "disabled")
+
+            cmd_result = subprocess.run(command, shell = True, capture_output = True, text = True, cwd = work_dir)
+            output = cmd_result.stdout
+            error = cmd_result.stderr
+            terminal.insert("end", f"{output}\n")
+
+            if error:
+                terminal.insert("end", f"{error}\n")
+
+        terminal.configure(state = "disabled")
 
 def compilation() -> None:
     global active_file
     if active_file is not None:
         terminal.configure(state = "normal")
-        terminal.insert("end", f"@> python C:\\Users\\vavro\\Documents\\VSCode\\Python\\Compiler\\vcc.pyw --file {active_file} --cpu 4x8_vn16")
-        terminal.insert("end", f"\n{subprocess.run(["python", "C:\\Users\\vavro\\Documents\\VSCode\\Python\\Compiler\\vcc.pyw", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
-        terminal.insert("end", f"\n{subprocess.run(["python", "C:\\Users\\vavro\\Documents\\VSCode\\Python\\Compiler\\vcc.pyw", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stderr}")
-        terminal.configure(state = "disabled")\
+        terminal.insert("end", f"@> python {ROOT_DIR}\\vcc.pyw --file {active_file} --cpu 4x8_vn16")
+        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
+        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stderr}")
+        terminal.configure(state = "disabled")
 
 def create_file() -> None:
     selected_path = get_selected_path()
@@ -309,6 +343,7 @@ tree.bind("<<TreeviewSelect>>", update_active_file)
 # Key biding
 root.bind_all("<Control-s>", save_active_file)
 root.bind_all("<Control-S>", save_active_file)
+terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.get()))
 
 
 # root grid init
