@@ -195,9 +195,9 @@ def compilation() -> None:
     global active_file
     if active_file is not None:
         terminal.configure(state = "normal")
-        terminal.insert("end", f"@> python {ROOT_DIR}\\vcc.pyw --file {active_file} --cpu 4x8_vn16")
-        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
-        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stderr}")
+        terminal.insert("end", f"@> python {ROOT_DIR}\\vcc.py --file {active_file} --cpu 4x8_vn16")
+        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.py", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
+        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.py", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stderr}")
         terminal.configure(state = "disabled")
 
 def create_file() -> None:
@@ -363,10 +363,10 @@ file_explorer.grid_rowconfigure(1, weight = 1)
 # file explorer buttons
 root_path_link.grid(row = 0, column = 0, sticky = "nw", padx = (5, 2.5), pady = (5, 5))
 
-delete_file.grid(           row = 0, column = 1, sticky = "nw", padx = 2.5,         pady = (5, 5))
-new_file.grid(              row = 0, column = 2, sticky = "nw", padx = 2.5,         pady = (5, 5))
-new_folder.grid(            row = 0, column = 3, sticky = "nw", padx = 2.5,         pady = (5, 5))
-refresh_file_explorer.grid( row = 0, column = 4, sticky = "nw", padx = (2.5, 5),    pady = (5, 5))
+delete_file.grid(row = 0, column = 1, sticky = "nw", padx = 2.5, pady = (5, 5))
+new_file.grid(row = 0, column = 2, sticky = "nw", padx = 2.5, pady = (5, 5))
+new_folder.grid(row = 0, column = 3, sticky = "nw", padx = 2.5, pady = (5, 5))
+refresh_file_explorer.grid( row = 0, column = 4, sticky = "nw", padx = (2.5, 5), pady = (5, 5))
 
 tree.grid(row = 1, column = 0, columnspan = 6, sticky = "nsew", padx = 5, pady = (0, 5))
 
