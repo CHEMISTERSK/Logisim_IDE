@@ -346,7 +346,7 @@ root.bind_all("<Control-S>", save_active_file)
 terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.get()))
 
 
-# root grid init
+# Root grid init
 root.grid_columnconfigure(0, weight = 1)
 root.grid_columnconfigure(1, weight = 4)
 
@@ -354,13 +354,13 @@ root.grid_rowconfigure(0, weight = 4)
 root.grid_rowconfigure(1, weight = 1)
 
 
-# file explorer
+# File explorer
 file_explorer.grid(row = 0, column = 0, rowspan = 2, sticky = "nsew", padx = 10, pady = 10)
 
 file_explorer.grid_columnconfigure(0, weight = 1)
 file_explorer.grid_rowconfigure(1, weight = 1)
 
-# file explorer buttons
+# File explorer buttons
 root_path_link.grid(row = 0, column = 0, sticky = "nw", padx = (5, 2.5), pady = (5, 5))
 
 delete_file.grid(row = 0, column = 1, sticky = "nw", padx = 2.5, pady = (5, 5))
@@ -371,7 +371,7 @@ refresh_file_explorer.grid( row = 0, column = 4, sticky = "nw", padx = (2.5, 5),
 tree.grid(row = 1, column = 0, columnspan = 6, sticky = "nsew", padx = 5, pady = (0, 5))
 
 
-# codeing workspace
+# Codeing workspace
 work_space.grid(row = 0, column = 1, sticky = "nsew", padx =  10, pady = 10)
 
 work_space.grid_columnconfigure(0, weight = 1)
@@ -383,7 +383,7 @@ compile_button.grid(row = 0, column = 1, sticky = "e", padx = (2.5, 10), pady = 
 editor.grid(row = 1, column = 0, columnspan = 2, sticky = "nsew", padx = 10, pady = (5, 10))
 
 
-# terminal monitor
+# Terminal monitor
 terminal_frame.grid(row = 1, column = 1, sticky = "nsew", padx =  10, pady = 10)
 
 terminal_frame.grid_columnconfigure(0, weight = 1)
@@ -394,5 +394,5 @@ working_dir_label.grid(row = 0, column = 0, sticky = "ew", padx = 10, pady = 5)
 terminal.grid(row = 1, column = 0, sticky = "nsew", padx = 10, pady = 5)
 terminal_input.grid(row = 2, column = 0, sticky = "ew", padx = 10, pady = (2.5, 10))
 
-
+# End of main loop
 root.mainloop()
