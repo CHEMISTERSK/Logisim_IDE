@@ -3,6 +3,7 @@ from customtkinter import *
 from pathlib import Path
 from PIL import Image
 from tkinter import ttk
+from tkinter import Event
 
 # Init
 root = CTk()
@@ -14,6 +15,8 @@ root.after(25, lambda: root.state("zoomed"))
 ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()
 work_dir = ROOT_DIR
 imbeded_commands = {"clr", "cls"}
+command_history = []
+command_history_index: int = None
 active_file = None
 
 # Icon loading
@@ -156,8 +159,18 @@ style.map('Treeview',
 # Functions
 def command_execution(command: str = None) -> None:
     global work_dir
+    global command_history
+    global command_history_index
 
     if command:
+        try:
+            if command != command_history[-1]:
+                command_history.append(command)
+        except IndexError:
+            command_history.append(command)
+
+        command_history_index = None
+
         terminal_input.delete("0", "end")
         terminal.configure(state = "normal")
         terminal.insert("end", f"@> {command}\n")
@@ -190,6 +203,32 @@ def command_execution(command: str = None) -> None:
                 terminal.insert("end", f"{error}\n")
 
         terminal.configure(state = "disabled")
+
+def command_history_navigation(event: Event) -> None:
+    global command_history
+    global command_history_index
+
+    if event.keysym in {"Up", "Down"}:
+        if event.keysym == "Up":
+            if command_history_index:
+                if (len(command_history) + (command_history_index - 1)) >= 0:
+                    command_history_index -= 1
+            else:
+                command_history_index = -1
+
+        elif event.keysym == "Down":
+            if command_history_index:
+                if (len(command_history) - (command_history_index + 1)) >= 0:
+                    command_history_index += 1
+            else:
+                command_history_index = 0
+        
+        
+        terminal_input.delete("0", "end")
+        terminal_input.insert("end", command_history[command_history_index])
+
+    else:
+        return
 
 def compilation() -> None:
     global active_file
@@ -290,7 +329,7 @@ def load_active_file() -> None:
             editor.delete("1.0", "end")
             editor.insert("end", file.read())
 
-def open_node(event) -> None:
+def open_node(event: Event) -> None:
     node = tree.focus()
     # Odstránenie dummy childov
     children = tree.get_children(node)
@@ -311,7 +350,7 @@ def refresh_tree() -> None:
     root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects".capitalize() + "\\", open = True)
     insert_files(root_node, ROOT_DIR + "\\projects")
 
-def save_active_file(event = None) -> str:
+def save_active_file(event: Event = None) -> str:
     if active_file is None:
         return "break"
 
@@ -320,7 +359,7 @@ def save_active_file(event = None) -> str:
 
     return "break"
 
-def update_active_file(event = None) -> None:
+def update_active_file(event: Event = None) -> None:
     global active_file
 
     selected_path = get_selected_item_path()
@@ -331,7 +370,7 @@ def update_active_file(event = None) -> None:
 
     load_active_file()
     
-
+# Setup file explorere
 tree = ttk.Treeview(file_explorer, style = "Treeview")
 root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects".capitalize() + "\\", open = True)
 
@@ -343,7 +382,9 @@ tree.bind("<<TreeviewSelect>>", update_active_file)
 # Key biding
 root.bind_all("<Control-s>", save_active_file)
 root.bind_all("<Control-S>", save_active_file)
+
 terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.get()))
+terminal_input.bind("<Key>", lambda event: command_history_navigation(event))
 
 
 # Root grid init

@@ -21,13 +21,18 @@ int main() {
     char path[MAX_PATH];
     char bat_cmd[256];
     char py_cmd[256];
+    char x;
 
     get_path(path);
+
     sprintf(bat_cmd, "cmd /c \"%s\\setup.bat\"", path);
     sprintf(py_cmd, "cmd /c start pythonw \"%s\\gui.pyw\"", path);
 
+    printf("Starting Setup...\n");
     int return_code = system(bat_cmd);
+    printf("Setup Done!\n");
 
+    printf("Init Startup...");
     if (return_code == 0) system(py_cmd);
     else {
         MessageBoxA(
@@ -36,6 +41,9 @@ int main() {
         "Fatal Error",
         MB_OK | MB_ICONERROR
         );
+
+        printf("Startup Faild!");
+        scanf("%c", &x);
     }
 
     return 0;
