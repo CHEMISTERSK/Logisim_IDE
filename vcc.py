@@ -177,7 +177,7 @@ def compiler(file_name: str, cpu: str) -> str:
 
     save(bin_compiled_code, hex_compiled_code, cpu, file_name.split('\\')[-1])
         
-    print(f"{warning}\nCode Successfully Compiled!\n\tSize: {len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")} bytes - Memory Usage {int(((len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")) / hw_dep["ram_registers"] * 100))}%\n\tReturn code 0\n")
+    print(f"{warning}\nCode Successfully Compiled!\n\tSize: {len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")} bytes - Memory Usage {int(((len(hex_compiled_code) - hex_compiled_code.count("0" * int(hw_dep["data_bits"] / 4) + "\n")) / hw_dep["ram_registers"] * 100))}%\n\tResult at: {os.path.dirname(os.path.abspath(__file__))}\\outputs\\\n\tReturn code 0\n")
 
 
 if __name__ == "__main__":

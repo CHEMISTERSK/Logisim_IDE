@@ -1,4 +1,4 @@
-import os, shutil, subprocess
+import os, shutil, subprocess, json
 from customtkinter import *
 from pathlib import Path
 from PIL import Image
@@ -18,6 +18,7 @@ imbeded_commands = {"clr", "cls"}
 command_history = []
 command_history_index: int = None
 active_file = None
+active_cpu_arch = None
 
 # Icon loading
 compile_icon_path = Path(__file__).with_name("icons") / "compile_icon.png"
@@ -101,6 +102,14 @@ terminal_working_path = CTkFrame(terminal_frame,
                                  width = 1120,
                                  height = 30)
 
+cpu_dropdown_menu = CTkOptionMenu(terminal_frame,
+                                  width = 180,
+                                  height = 35,
+                                  values = ["Select CPU"],
+                                  font = ("arial", 15, "bold"),
+                                  anchor = "center",
+                                  command = lambda _: select_cpu_arch())
+
 working_dir_label = CTkLabel(terminal_working_path,
                              text = f"Working Directory: {work_dir}>",
                              font = ("Consolas", 14, "bold"))
@@ -113,7 +122,8 @@ terminal = CTkTextbox(terminal_frame,
 
 terminal_input = CTkEntry(terminal_frame,
                           width = 1120,
-                          height = 30)
+                          height = 30,
+                          font = ("Consolas", 13, "bold"))
 
 # Definition of workspace
 work_space = CTkFrame(root,
@@ -163,6 +173,9 @@ def command_execution(command: str = None) -> None:
     global command_history_index
 
     if command:
+        if command == "cmd":
+            return
+        
         try:
             if command != command_history[-1]:
                 command_history.append(command)
@@ -197,14 +210,14 @@ def command_execution(command: str = None) -> None:
             cmd_result = subprocess.run(command, shell = True, capture_output = True, text = True, cwd = work_dir)
             output = cmd_result.stdout
             error = cmd_result.stderr
-            terminal.insert("end", f"{output}\n")
+            terminal.insert("end", f"{output}")
 
             if error:
-                terminal.insert("end", f"{error}\n")
+                terminal.insert("end", f"{error}")
 
         terminal.configure(state = "disabled")
 
-def command_history_navigation(event: Event) -> None:
+def command_history_navigation(event: Event = None) -> None:
     global command_history
     global command_history_index
 
@@ -232,11 +245,12 @@ def command_history_navigation(event: Event) -> None:
 
 def compilation() -> None:
     global active_file
-    if active_file is not None:
+    global active_cpu_arch
+    if active_file and active_cpu_arch:
         terminal.configure(state = "normal")
-        terminal.insert("end", f"@> python {ROOT_DIR}\\vcc.py --file {active_file} --cpu 4x8_vn16")
-        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.py", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stdout}")
-        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.py", "--file", active_file, "--cpu", "4x8_vn16"], capture_output = True, text = True).stderr}")
+        terminal.insert("end", f"@> python {ROOT_DIR}\\vcc.py --file {active_file} --cpu {active_cpu_arch}")
+        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.py", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True).stdout}")
+        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.py", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True).stderr}")
         terminal.configure(state = "disabled")
 
 def create_file() -> None:
@@ -329,7 +343,11 @@ def load_active_file() -> None:
             editor.delete("1.0", "end")
             editor.insert("end", file.read())
 
-def open_node(event: Event) -> None:
+def load_cpu_arch() -> None:
+    with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "r") as file:
+        cpu_dropdown_menu.configure(values = json.load(file))
+
+def open_node(event: Event = None) -> None:
     node = tree.focus()
     # Odstránenie dummy childov
     children = tree.get_children(node)
@@ -359,6 +377,10 @@ def save_active_file(event: Event = None) -> str:
 
     return "break"
 
+def select_cpu_arch() -> None:
+    global active_cpu_arch
+    active_cpu_arch = cpu_dropdown_menu.get()
+
 def update_active_file(event: Event = None) -> None:
     global active_file
 
@@ -375,6 +397,7 @@ tree = ttk.Treeview(file_explorer, style = "Treeview")
 root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects".capitalize() + "\\", open = True)
 
 insert_files(root_node, ROOT_DIR + "\\projects")
+load_cpu_arch()
 
 tree.bind("<<TreeviewOpen>>", open_node)
 tree.bind("<<TreeviewSelect>>", update_active_file)
@@ -430,10 +453,11 @@ terminal_frame.grid(row = 1, column = 1, sticky = "nsew", padx =  10, pady = 10)
 terminal_frame.grid_columnconfigure(0, weight = 1)
 terminal_frame.grid_rowconfigure(1, weight = 1)
 
-terminal_working_path.grid(row = 0, column = 0, sticky = "ew", padx = 10, pady = (10, 2.5))
-working_dir_label.grid(row = 0, column = 0, sticky = "ew", padx = 10, pady = 5)
-terminal.grid(row = 1, column = 0, sticky = "nsew", padx = 10, pady = 5)
-terminal_input.grid(row = 2, column = 0, sticky = "ew", padx = 10, pady = (2.5, 10))
+terminal_working_path.grid(row = 0, column = 0, sticky = "ew", padx = (10, 2.5), pady = (10, 2.5))
+cpu_dropdown_menu. grid(row = 0, column = 1, sticky = "ew", padx = (5, 10), pady = (10, 2.5))
+working_dir_label.grid(row = 0, column = 0, sticky = "ew", padx = (10, 5), pady = 5)
+terminal.grid(row = 1, column = 0, columnspan = 2, sticky = "nsew", padx = 10, pady = 5)
+terminal_input.grid(row = 2, column = 0, columnspan = 2, sticky = "ew", padx = 10, pady = (2.5, 10))
 
 # End of main loop
 root.mainloop()
