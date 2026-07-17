@@ -4,6 +4,7 @@ from pathlib import Path
 from PIL import Image
 from tkinter import ttk
 from tkinter import Event
+from classes import FileTab
 
 # Init
 root = CTk()
@@ -16,19 +17,21 @@ ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()
 work_dir = ROOT_DIR
 imbeded_commands = {"clr", "cls"}
 command_history = []
+active_projects = []
 command_history_index: int = None
-active_file = None
+active_file = None                  # active file path
 active_cpu_arch = None
 
-# Icon loading
+# Icon's loading
 compile_icon_path = Path(__file__).with_name("icons") / "compile_icon.png"
 folder_icon_path = Path(__file__).with_name("icons") / "folder.png"
 new_file_icon_path = Path(__file__).with_name("icons") / "new_file.png"
 new_folder_icon_path = Path(__file__).with_name("icons") / "new_folder.png"
 delete_file_icon_path = Path(__file__).with_name("icons") / "delete_file.png"
+rename_file_icon_path = Path(__file__).with_name("icons") / "rename_file.png"
 refresh_file_explorer_icon_path = Path(__file__).with_name("icons") / "refresh.png"
 
-# Icon compiling
+# Icon's compiling
 compile_icon = CTkImage(light_image = Image.open(compile_icon_path),
                 dark_image = Image.open(compile_icon_path),
                 size = (25, 25))
@@ -43,6 +46,9 @@ new_folder_icon = CTkImage(light_image = Image.open(new_folder_icon_path),
                            size = (25, 25))
 delete_file_icon = CTkImage(light_image = Image.open(delete_file_icon_path),
                             dark_image = Image.open(delete_file_icon_path),
+                            size = (25, 25))
+rename_file_icon = CTkImage(light_image = Image.open(rename_file_icon_path),
+                            dark_image = Image.open(rename_file_icon_path),
                             size = (25, 25))
 refresh_file_explorer_icon = CTkImage(light_image = Image.open(refresh_file_explorer_icon_path),
                                       dark_image = Image.open(refresh_file_explorer_icon_path),
@@ -62,6 +68,13 @@ root_path_link = CTkButton(file_explorer,
                            height = 30,
                            image = folder_icon,
                            command = lambda: os.startfile(f"{os.path.dirname(os.path.abspath(__file__))}\\projects"))
+
+rename_file = CTkButton(file_explorer,
+                        text = "",
+                        width = 30,
+                        height = 30,
+                        image = rename_file_icon,
+                        command = lambda: ...)
 
 delete_file = CTkButton(file_explorer,
                         text = "",
@@ -134,13 +147,13 @@ work_space = CTkFrame(root,
 
 hot_bar = CTkFrame(work_space,
                    width = 1075,
-                   height = 30)
+                   height = 38)
 
 compile_button = CTkButton(work_space,
                            image = compile_icon,
                            text = "",
-                           width = 25,
-                           height = 25,
+                           width = 38,
+                           height = 38,
                            command = lambda: compilation())
 
 editor = CTkTextbox(work_space,
@@ -161,12 +174,28 @@ style.configure("Treeview.Heading",
                 background = "#2a2a2a",
                 foreground = "white",
                 borderwidth = 0,
-                font = ("arial", 10, "bold"))
+                font = ("arial", 12, "bold"))
 style.map('Treeview',
           background = [('selected', '#0078d4')],
           foreground = [('selected', 'white')])
 
-# Functions
+# Functions (A -> Z)
+def add_tab(file_path: str = None) -> FileTab | None:
+    global active_projects
+    global active_file
+
+    if file_path:
+        file_name = file_path.split("\\")[-1]
+
+        with open(file_path, "r") as file:
+            file_content = file.read()
+
+        tab = FileTab(hot_bar, file_name, file_path, file_content, select_tab, remove_tab)
+        return tab
+    
+    else:
+        return None
+
 def command_execution(command: str = None) -> None:
     global work_dir
     global command_history
@@ -236,7 +265,6 @@ def command_history_navigation(event: Event = None) -> None:
             else:
                 command_history_index = 0
         
-        
         terminal_input.delete("0", "end")
         terminal_input.insert("end", command_history[command_history_index])
 
@@ -248,9 +276,9 @@ def compilation() -> None:
     global active_cpu_arch
     if active_file and active_cpu_arch:
         terminal.configure(state = "normal")
-        terminal.insert("end", f"@> python {ROOT_DIR}\\vcc.py --file {active_file} --cpu {active_cpu_arch}")
-        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.py", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True).stdout}")
-        terminal.insert("end", f"\n{subprocess.run(["python", f"{ROOT_DIR}\\vcc.py", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True).stderr}")
+        terminal.insert("end", f"@> pythonw {ROOT_DIR}\\vcc.pyw --file {active_file} --cpu {active_cpu_arch}")
+        terminal.insert("end", f"\n{subprocess.run(["pythonw", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True).stdout}")
+        terminal.insert("end", f"\n{subprocess.run(["pythonw", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True).stderr}")
         terminal.configure(state = "disabled")
 
 def create_file() -> None:
@@ -273,27 +301,32 @@ def del_file() -> None:
         shutil.rmtree(get_selected_path())
     else:
         os.remove(active_file)
+
     refresh_tree()
     active_file = None
     editor.delete("1.0", "end")
 
 def explorer(work_dir: list[str]) -> list[str]:
-    # Rekurzívne načíta štruktúru priečinkov a súborov
+    # Recursively loads the folder and file structure
     try:
         path = os.path.join(*work_dir) if work_dir else ROOT_DIR + "\\projects"
         items = []
+
         for item in os.listdir(path):
             full_path = os.path.join(path, item)
             items.append(item)
+
             if os.path.isdir(full_path):
-                # Rekurzívne načítaj podpriečinky
+                # Recursively load subfolders
                 sub_items = explorer(work_dir + [item])
                 items.extend(sub_items)
+
         return items
+    
     except PermissionError:
         return []
 
-def get_selected_item_path() -> None | Path:
+def get_selected_item_path() -> None | str:
     selected_node = tree.focus()
 
     if not selected_node:
@@ -301,10 +334,13 @@ def get_selected_item_path() -> None | Path:
 
     path_parts = []
     current = selected_node
+
     while current:
         item_text = tree.item(current, "text").rstrip("\\")
+
         if item_text != "projects":
             path_parts.insert(0, item_text)
+
         current = tree.parent(current)
 
     return os.path.join(ROOT_DIR + "\\projects", *path_parts)
@@ -329,19 +365,32 @@ def insert_files(parent: str, path: str) -> None:
 
             if os.path.isdir(full_path):
                 tree.insert(node, "end")
+
     except PermissionError:
         pass
 
 def load_active_file() -> None:
     global active_file
-    global editor
+    global active_projects
 
-    if active_file is None:
-        pass
-    else:
-        with open(active_file, "r") as file:
+    if active_file:
+        file_name = active_file.split('\\')[-1]
+
+        if file_name not in [tab.name for tab in active_projects]:
+            active_projects.append(add_tab(active_file))
+        else:
             editor.delete("1.0", "end")
-            editor.insert("end", file.read())
+            editor.insert("end", next(project.content for project in active_projects if project.name == file_name))
+
+        for tab in active_projects:
+            tab.pack(side = "left", padx = 2.5, pady = 5)
+
+            if tab.name == file_name:
+                editor.delete("1.0", "end")
+                editor.insert("end", tab.content)
+
+    else:
+        return None
 
 def load_cpu_arch() -> None:
     with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "r") as file:
@@ -349,13 +398,14 @@ def load_cpu_arch() -> None:
 
 def open_node(event: Event = None) -> None:
     node = tree.focus()
-    # Odstránenie dummy childov
+    # Removing dummy children
     children = tree.get_children(node)
+
     if len(children) ==  1 and tree.item(children[0], "text") == "":
         tree.delete(children[0])
-        
         path_parts = []
         current = node
+
         while current:
             path_parts.insert(0, tree.item(current, "text").rstrip("\\"))
             current = tree.parent(current)
@@ -368,12 +418,28 @@ def refresh_tree() -> None:
     root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects".capitalize() + "\\", open = True)
     insert_files(root_node, ROOT_DIR + "\\projects")
 
+def remove_tab(tab: FileTab = None) -> None:
+    global active_file
+
+    if tab:
+        active_projects.remove(tab)
+        active_file = None
+
 def save_active_file(event: Event = None) -> str:
+    global active_file
+
     if active_file is None:
         return "break"
 
     with open(active_file, "w") as file:
         file.write(editor.get("1.0", "end-1c"))
+
+        for tab in active_projects:
+            if tab.name == active_file.split('\\')[-1]:
+                tab.content = editor.get("1.0", "end-1c")
+
+            else:
+                continue
 
     return "break"
 
@@ -381,10 +447,20 @@ def select_cpu_arch() -> None:
     global active_cpu_arch
     active_cpu_arch = cpu_dropdown_menu.get()
 
-def update_active_file(event: Event = None) -> None:
+def select_tab(tab: FileTab = None) -> None:
+    global active_file
+
+    if tab:
+        editor.delete("1.0", "end")
+        editor.insert("end", tab.content)
+
+        active_file = tab.path
+
+def update_active_file(event: Event = None, is_tab: bool = False) -> None:
     global active_file
 
     selected_path = get_selected_item_path()
+
     if selected_path and os.path.isfile(selected_path):
         active_file = selected_path
     else:
@@ -394,7 +470,7 @@ def update_active_file(event: Event = None) -> None:
     
 # Setup file explorere
 tree = ttk.Treeview(file_explorer, style = "Treeview")
-root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects".capitalize() + "\\", open = True)
+root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects" + "\\", open = True)
 
 insert_files(root_node, ROOT_DIR + "\\projects")
 load_cpu_arch()
@@ -427,10 +503,11 @@ file_explorer.grid_rowconfigure(1, weight = 1)
 # File explorer buttons
 root_path_link.grid(row = 0, column = 0, sticky = "nw", padx = (5, 2.5), pady = (5, 5))
 
-delete_file.grid(row = 0, column = 1, sticky = "nw", padx = 2.5, pady = (5, 5))
-new_file.grid(row = 0, column = 2, sticky = "nw", padx = 2.5, pady = (5, 5))
-new_folder.grid(row = 0, column = 3, sticky = "nw", padx = 2.5, pady = (5, 5))
-refresh_file_explorer.grid( row = 0, column = 4, sticky = "nw", padx = (2.5, 5), pady = (5, 5))
+rename_file.grid(row = 0, column = 1, sticky = "nw", padx = 2.5, pady = (5, 5))
+delete_file.grid(row = 0, column = 2, sticky = "nw", padx = 2.5, pady = (5, 5))
+new_file.grid(row = 0, column = 3, sticky = "nw", padx = 2.5, pady = (5, 5))
+new_folder.grid(row = 0, column = 4, sticky = "nw", padx = 2.5, pady = (5, 5))
+refresh_file_explorer.grid( row = 0, column = 5, sticky = "nw", padx = (2.5, 7.5), pady = (5, 5))
 
 tree.grid(row = 1, column = 0, columnspan = 6, sticky = "nsew", padx = 5, pady = (0, 5))
 
@@ -442,9 +519,9 @@ work_space.grid_columnconfigure(0, weight = 1)
 work_space.grid_columnconfigure(1, weight = 0)
 work_space.grid_rowconfigure(1, weight = 1)
 
-hot_bar.grid(row = 0, column = 0, sticky = "ew", padx =  (10, 2.5), pady = (10, 5))
-compile_button.grid(row = 0, column = 1, sticky = "e", padx = (2.5, 10), pady = (10, 5))
-editor.grid(row = 1, column = 0, columnspan = 2, sticky = "nsew", padx = 10, pady = (5, 10))
+hot_bar.grid(row = 0, column = 0, sticky = "ew", padx =  (10, 2.5), pady = (10, 2.5))
+compile_button.grid(row = 0, column = 1, sticky = "e", padx = (2.5, 10), pady = (10, 2.5))
+editor.grid(row = 1, column = 0, columnspan = 2, sticky = "nsew", padx = 10, pady = (2.5, 10))
 
 
 # Terminal monitor

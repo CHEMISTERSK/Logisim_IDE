@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <shellapi.h>
 
 int get_path(char path[]) {
 
@@ -26,14 +27,24 @@ int main() {
     get_path(path);
 
     sprintf(bat_cmd, "cmd /c \"%s\\setup.bat\"", path);
-    sprintf(py_cmd, "cmd /c start pythonw \"%s\\gui.pyw\"", path);
+    sprintf(py_cmd, "%s\\gui.pyw", path);
 
     printf("Starting Setup...\n");
     int return_code = system(bat_cmd);
     printf("Setup Done!\n");
 
     printf("Init Startup...");
-    if (return_code == 0) system(py_cmd);
+    if (return_code == 0){
+        ShellExecute(
+            NULL,
+            "open",
+            py_cmd,
+            NULL,
+            NULL,
+            SW_SHOWNORMAL
+        );
+    }
+    
     else {
         MessageBoxA(
         NULL,
