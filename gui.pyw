@@ -4,23 +4,63 @@ from pathlib import Path
 from PIL import Image
 from tkinter import ttk
 from tkinter import Event
-from classes import FileTab
+from rn_gui import rename_ as rename
 
-# Init
+# Init of CTk
 root = CTk()
 root.geometry("1920x1080")
 root.title("Virtual CPU IDE")
 root.iconbitmap(f"{os.path.dirname(os.path.abspath(__file__))}\\icons\\icon.ico")
 root.after(25, lambda: root.state("zoomed"))
 
-ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()
-work_dir = ROOT_DIR
-imbeded_commands = {"clr", "cls"}
-command_history = []
-active_projects = []
-command_history_index: int = None
-active_file = None                  # active file path
-active_cpu_arch = None
+# Variables definition (A -> Z)
+active_file = None                                                          # selected file path
+active_cpu_arch = None                                                      # selected cpu architecture
+active_dir = None                                                           # selected folder path
+command_history = []                                                        # command history buffer
+command_history_index = None                                                # command history listing index
+imbeded_commands = {"clr", "cls"}                                           # set of imbeded commands
+open_files = []                                                             # opend files tabs list
+ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()     # root directory - "C:\...\compiler\"
+work_dir = ROOT_DIR                                                         # working directory for imbeded terminal - defalt is root dir
+
+# Class definition 
+class file_tab(CTkFrame):
+    def __init__( self, parent, name: str, path: str, content: str, on_select = None, on_close = None):
+        super().__init__(parent, fg_color = "#2b2b2b", corner_radius = 5, width = 160, height = 36)
+
+        self.name = name
+        self.path = path
+        self.content = content
+
+        self.on_select = on_select
+        self.on_close = on_close
+
+        self.file_button = CTkButton(self,
+                                     text = self.name,
+                                     width = 120,
+                                     corner_radius = 5,
+                                     command = self.select_tab)
+        
+
+        self.close_button = CTkButton(self,
+                                      text = "×",
+                                      width = 30,
+                                      corner_radius = 5,
+                                      command = self.close_tab)
+
+        self.file_button.pack(side = "left")
+        self.close_button.pack(side = "left")
+
+    def select_tab(self):
+        if self.on_select:
+            self.on_select(self)
+
+    def close_tab(self):
+        if self.on_close:
+            self.on_close(self)
+
+        self.destroy()
 
 # Icon's loading
 compile_icon_path = Path(__file__).with_name("icons") / "compile_icon.png"
@@ -74,7 +114,7 @@ rename_file = CTkButton(file_explorer,
                         width = 30,
                         height = 30,
                         image = rename_file_icon,
-                        command = lambda: ...)
+                        command = lambda: rename_item())
 
 delete_file = CTkButton(file_explorer,
                         text = "",
@@ -180,8 +220,8 @@ style.map('Treeview',
           foreground = [('selected', 'white')])
 
 # Functions (A -> Z)
-def add_tab(file_path: str = None) -> FileTab | None:
-    global active_projects
+def add_tab(file_path: str = None) -> file_tab | None:
+    global open_files
     global active_file
 
     if file_path:
@@ -190,7 +230,11 @@ def add_tab(file_path: str = None) -> FileTab | None:
         with open(file_path, "r") as file:
             file_content = file.read()
 
-        tab = FileTab(hot_bar, file_name, file_path, file_content, select_tab, remove_tab)
+        file_dir = file_path.split('\\')
+        del file_dir[-1]
+        file_dir = '\\'.join(file_dir)
+
+        tab = file_tab(hot_bar, file_name, file_dir, file_content, select_tab, remove_tab)
         return tab
     
     else:
@@ -203,7 +247,7 @@ def command_execution(command: str = None) -> None:
 
     if command:
         if command == "cmd":
-            return
+            return None
         
         try:
             if command != command_history[-1]:
@@ -274,6 +318,7 @@ def command_history_navigation(event: Event = None) -> None:
 def compilation() -> None:
     global active_file
     global active_cpu_arch
+    
     if active_file and active_cpu_arch:
         terminal.configure(state = "normal")
         terminal.insert("end", f"@> pythonw {ROOT_DIR}\\vcc.pyw --file {active_file} --cpu {active_cpu_arch}")
@@ -298,7 +343,7 @@ def del_file() -> None:
     global editor
 
     if active_file is None:
-        shutil.rmtree(get_selected_path())
+        shutil.rmtree(get_selected_path() if get_selected_path() != ROOT_DIR else None)
     else:
         os.remove(active_file)
 
@@ -368,21 +413,23 @@ def insert_files(parent: str, path: str) -> None:
 
     except PermissionError:
         pass
+    except FileNotFoundError:
+        os.mkdir("C:\\users\\vavro\\documents\\vscode\\python\\compiler\\projects")
 
 def load_active_file() -> None:
     global active_file
-    global active_projects
+    global open_files
 
     if active_file:
         file_name = active_file.split('\\')[-1]
 
-        if file_name not in [tab.name for tab in active_projects]:
-            active_projects.append(add_tab(active_file))
+        if file_name not in [tab.name for tab in open_files]:
+            open_files.append(add_tab(active_file))
         else:
             editor.delete("1.0", "end")
-            editor.insert("end", next(project.content for project in active_projects if project.name == file_name))
+            editor.insert("end", next(project.content for project in open_files if project.name == file_name))
 
-        for tab in active_projects:
+        for tab in open_files:
             tab.pack(side = "left", padx = 2.5, pady = 5)
 
             if tab.name == file_name:
@@ -418,12 +465,21 @@ def refresh_tree() -> None:
     root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects".capitalize() + "\\", open = True)
     insert_files(root_node, ROOT_DIR + "\\projects")
 
-def remove_tab(tab: FileTab = None) -> None:
+def remove_tab(tab: file_tab = None) -> None:
     global active_file
 
     if tab:
-        active_projects.remove(tab)
+        open_files.remove(tab)
         active_file = None
+
+def rename_item() -> None:
+    global active_file
+    global active_dir
+
+    old_item_path, new_item_path = rename(active_file if active_dir == None else active_dir)
+    update_tabs_info(old_item_path, new_item_path)
+
+    refresh_tree()
 
 def save_active_file(event: Event = None) -> str:
     global active_file
@@ -434,7 +490,7 @@ def save_active_file(event: Event = None) -> str:
     with open(active_file, "w") as file:
         file.write(editor.get("1.0", "end-1c"))
 
-        for tab in active_projects:
+        for tab in open_files:
             if tab.name == active_file.split('\\')[-1]:
                 tab.content = editor.get("1.0", "end-1c")
 
@@ -447,24 +503,55 @@ def select_cpu_arch() -> None:
     global active_cpu_arch
     active_cpu_arch = cpu_dropdown_menu.get()
 
-def select_tab(tab: FileTab = None) -> None:
+def select_tab(tab: file_tab = None) -> None:
     global active_file
 
     if tab:
         editor.delete("1.0", "end")
         editor.insert("end", tab.content)
 
-        active_file = tab.path
+        active_file = f"{tab.path}\\{tab.name}"
 
-def update_active_file(event: Event = None, is_tab: bool = False) -> None:
+def update_tabs_info(old_path: str = None, new_path: str = None) -> None:
+    global open_files
+    is_file = True
+
+    if os.path.isfile(new_path) == True:
+        old_path: list[str] = old_path.split('\\')
+        new_path: list[str] = new_path.split('\\')
+
+        old_file_name = old_path[-1]
+        new_file_name = new_path[-1]
+
+        del old_path[-1]
+        del new_path[-1]
+
+        old_path = '\\'.join(old_path)
+        new_path = '\\'.join(new_path)
+    else:
+        is_file = False
+
+    for tab in open_files:
+        if is_file == True:
+            if tab.name == old_file_name:
+                tab.name = new_file_name
+                tab.file_button.configure(text = new_file_name)
+
+        if tab.path == old_path:
+            tab.path = new_path
+
+def update_active_file(event: Event = None) -> None:
     global active_file
+    global active_dir
 
     selected_path = get_selected_item_path()
 
     if selected_path and os.path.isfile(selected_path):
         active_file = selected_path
+        active_dir = None
     else:
         active_file = None
+        active_dir = selected_path
 
     load_active_file()
     
@@ -481,6 +568,7 @@ tree.bind("<<TreeviewSelect>>", update_active_file)
 # Key biding
 root.bind_all("<Control-s>", save_active_file)
 root.bind_all("<Control-S>", save_active_file)
+root.bind_all("<F2>", lambda event: (rename(active_file if active_dir == None else active_dir), refresh_tree()))
 
 terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.get()))
 terminal_input.bind("<Key>", lambda event: command_history_navigation(event))
