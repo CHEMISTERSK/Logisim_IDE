@@ -318,12 +318,14 @@ def command_history_navigation(event: Event = None) -> None:
 def compilation() -> None:
     global active_file
     global active_cpu_arch
-    
+
     if active_file and active_cpu_arch:
+        compilation_output = subprocess.run(["pythonw", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True)
+        
         terminal.configure(state = "normal")
         terminal.insert("end", f"@> pythonw {ROOT_DIR}\\vcc.pyw --file {active_file} --cpu {active_cpu_arch}")
-        terminal.insert("end", f"\n{subprocess.run(["pythonw", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True).stdout}")
-        terminal.insert("end", f"\n{subprocess.run(["pythonw", f"{ROOT_DIR}\\vcc.pyw", "--file", active_file, "--cpu", active_cpu_arch], capture_output = True, text = True).stderr}")
+        terminal.insert("end", f"\n{compilation_output.stdout}")
+        terminal.insert("end", f"\n{compilation_output.stderr}")
         terminal.configure(state = "disabled")
 
 def create_file() -> None:
@@ -333,9 +335,9 @@ def create_file() -> None:
         pass
     refresh_tree()
 
-def create_folder(folder: str = "new_folder") -> None:
+def create_folder() -> None:
     selected_path = get_selected_path()
-    Path(os.path.join(selected_path, folder)).mkdir(parents = True, exist_ok = True)
+    Path(os.path.join(selected_path, "new_folder")).mkdir(parents = True, exist_ok = True)
     refresh_tree()
 
 def del_file() -> None:
@@ -440,8 +442,12 @@ def load_active_file() -> None:
         return None
 
 def load_cpu_arch() -> None:
-    with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "r") as file:
-        cpu_dropdown_menu.configure(values = json.load(file))
+    try:
+        with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "r") as file:
+            cpu_dropdown_menu.configure(values = json.load(file))
+    except FileNotFoundError:
+        with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "w") as file:
+            json.dump("")
 
 def open_node(event: Event = None) -> None:
     node = tree.focus()
@@ -559,19 +565,21 @@ def update_active_file(event: Event = None) -> None:
 tree = ttk.Treeview(file_explorer, style = "Treeview")
 root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects" + "\\", open = True)
 
+# Init functions call
 insert_files(root_node, ROOT_DIR + "\\projects")
 load_cpu_arch()
 
+# Key biding
 tree.bind("<<TreeviewOpen>>", open_node)
 tree.bind("<<TreeviewSelect>>", update_active_file)
 
-# Key biding
 root.bind_all("<Control-s>", save_active_file)
 root.bind_all("<Control-S>", save_active_file)
 root.bind_all("<F2>", lambda event: (rename(active_file if active_dir == None else active_dir), refresh_tree()))
 
 terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.get()))
 terminal_input.bind("<Key>", lambda event: command_history_navigation(event))
+
 
 
 # Root grid init
