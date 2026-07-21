@@ -4,6 +4,7 @@ from pathlib import Path
 from PIL import Image
 from tkinter import ttk
 from tkinter import Event
+from typing import Any
 from rn_gui import rename_ as rename
 
 # Init of CTk
@@ -62,19 +63,26 @@ class file_tab(CTkFrame):
 
         self.destroy()
 
-# Icon's loading
+# Icon's loading (A -> Z)
+add_cpu_icon_path = Path(__file__).with_name("icons") / "add_cpu.png"
 compile_icon_path = Path(__file__).with_name("icons") / "compile_icon.png"
+delete_file_icon_path = Path(__file__).with_name("icons") / "delete_file.png"
 folder_icon_path = Path(__file__).with_name("icons") / "folder.png"
 new_file_icon_path = Path(__file__).with_name("icons") / "new_file.png"
 new_folder_icon_path = Path(__file__).with_name("icons") / "new_folder.png"
-delete_file_icon_path = Path(__file__).with_name("icons") / "delete_file.png"
-rename_file_icon_path = Path(__file__).with_name("icons") / "rename_file.png"
 refresh_file_explorer_icon_path = Path(__file__).with_name("icons") / "refresh.png"
+rename_file_icon_path = Path(__file__).with_name("icons") / "rename_file.png"
 
-# Icon's compiling
+# Icon's compiling (A -> Z)
+add_cpu_icon = CTkImage(light_image = Image.open(add_cpu_icon_path),
+                                      dark_image = Image.open(add_cpu_icon_path),
+                                      size = (25, 25))
 compile_icon = CTkImage(light_image = Image.open(compile_icon_path),
                 dark_image = Image.open(compile_icon_path),
                 size = (25, 25))
+delete_file_icon = CTkImage(light_image = Image.open(delete_file_icon_path),
+                            dark_image = Image.open(delete_file_icon_path),
+                            size = (25, 25))
 folder_icon = CTkImage(light_image = Image.open(folder_icon_path),
                        dark_image = Image.open(folder_icon_path),
                        size = (25, 25))
@@ -84,25 +92,22 @@ new_file_icon = CTkImage(light_image = Image.open(new_file_icon_path),
 new_folder_icon = CTkImage(light_image = Image.open(new_folder_icon_path),
                            dark_image = Image.open(new_folder_icon_path),
                            size = (25, 25))
-delete_file_icon = CTkImage(light_image = Image.open(delete_file_icon_path),
-                            dark_image = Image.open(delete_file_icon_path),
-                            size = (25, 25))
-rename_file_icon = CTkImage(light_image = Image.open(rename_file_icon_path),
-                            dark_image = Image.open(rename_file_icon_path),
-                            size = (25, 25))
 refresh_file_explorer_icon = CTkImage(light_image = Image.open(refresh_file_explorer_icon_path),
                                       dark_image = Image.open(refresh_file_explorer_icon_path),
                                       size = (25, 25))
+rename_file_icon = CTkImage(light_image = Image.open(rename_file_icon_path),
+                            dark_image = Image.open(rename_file_icon_path),
+                            size = (25, 25))
 
 # Definition of file explorer 
 file_explorer: CTkFrame = CTkFrame(root,
-                         width = 384,
+                         width = 432,
                          height = 785,
                          border_width = 2.5,
                          border_color = "white")
 
 root_path_link = CTkButton(file_explorer,
-                           text = "Open Projects Folder ",
+                           text = "Projects Folder ",
                            font = ("arial", 15, "bold"),
                            width = 120,
                            height = 30,
@@ -155,6 +160,13 @@ terminal_working_path = CTkFrame(terminal_frame,
                                  width = 1120,
                                  height = 30)
 
+add_cpu_arch = CTkButton(terminal_frame,
+                         text = "",
+                         width = 30,
+                         height = 30,
+                         image = add_cpu_icon,
+                         command = lambda: ...)
+
 cpu_dropdown_menu = CTkOptionMenu(terminal_frame,
                                   width = 180,
                                   height = 35,
@@ -187,7 +199,7 @@ work_space = CTkFrame(root,
 
 hot_bar = CTkFrame(work_space,
                    width = 1075,
-                   height = 38)
+                   height = 37)
 
 compile_button = CTkButton(work_space,
                            image = compile_icon,
@@ -441,6 +453,10 @@ def load_active_file() -> None:
     else:
         return None
 
+def load_config() -> dict[str, Any]:
+    with open(f"{ROOT_DIR}\\files\\ide\\config.json", "r") as config_file:
+        return json.load(config_file)
+
 def load_cpu_arch() -> None:
     try:
         with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "r") as file:
@@ -487,11 +503,11 @@ def rename_item() -> None:
 
     refresh_tree()
 
-def save_active_file(event: Event = None) -> str:
+def save_active_file(event: Event = None) -> None:
     global active_file
 
     if active_file is None:
-        return "break"
+        return None
 
     with open(active_file, "w") as file:
         file.write(editor.get("1.0", "end-1c"))
@@ -503,7 +519,7 @@ def save_active_file(event: Event = None) -> str:
             else:
                 continue
 
-    return "break"
+    return None
 
 def select_cpu_arch() -> None:
     global active_cpu_arch
@@ -563,11 +579,12 @@ def update_active_file(event: Event = None) -> None:
     
 # Setup file explorere
 tree = ttk.Treeview(file_explorer, style = "Treeview")
-root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects" + "\\", open = True)
+root_node = tree.insert("", "end", text = ROOT_DIR + "\\projects\\", open = True)
 
 # Init functions call
 insert_files(root_node, ROOT_DIR + "\\projects")
 load_cpu_arch()
+config = load_config()
 
 # Key biding
 tree.bind("<<TreeviewOpen>>", open_node)
@@ -580,6 +597,8 @@ root.bind_all("<F2>", lambda event: (rename(active_file if active_dir == None el
 terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.get()))
 terminal_input.bind("<Key>", lambda event: command_history_navigation(event))
 
+if config["auto_save"] == True:
+    editor.bind("<Key>", save_active_file)      # need fix - not writing
 
 
 # Root grid init
@@ -591,7 +610,8 @@ root.grid_rowconfigure(1, weight = 1)
 
 
 # File explorer
-file_explorer.grid(row = 0, column = 0, rowspan = 2, sticky = "nsew", padx = 10, pady = 10)
+file_explorer.grid(row = 0, column = 0, rowspan = 2, sticky = "nsew", padx = (10, 5), pady = 10)
+file_explorer.grid_propagate(False)
 
 file_explorer.grid_columnconfigure(0, weight = 1)
 file_explorer.grid_rowconfigure(1, weight = 1)
@@ -609,7 +629,7 @@ tree.grid(row = 1, column = 0, columnspan = 6, sticky = "nsew", padx = 5, pady =
 
 
 # Codeing workspace
-work_space.grid(row = 0, column = 1, sticky = "nsew", padx =  10, pady = 10)
+work_space.grid(row = 0, column = 1, sticky = "nsew", padx =  (5, 10), pady = (10, 5))
 
 work_space.grid_columnconfigure(0, weight = 1)
 work_space.grid_columnconfigure(1, weight = 0)
@@ -621,16 +641,17 @@ editor.grid(row = 1, column = 0, columnspan = 2, sticky = "nsew", padx = 10, pad
 
 
 # Terminal monitor
-terminal_frame.grid(row = 1, column = 1, sticky = "nsew", padx =  10, pady = 10)
+terminal_frame.grid(row = 1, column = 1, sticky = "nsew", padx = (5, 10), pady = (5, 10))
 
 terminal_frame.grid_columnconfigure(0, weight = 1)
 terminal_frame.grid_rowconfigure(1, weight = 1)
 
 terminal_working_path.grid(row = 0, column = 0, sticky = "ew", padx = (10, 2.5), pady = (10, 2.5))
-cpu_dropdown_menu. grid(row = 0, column = 1, sticky = "ew", padx = (5, 10), pady = (10, 2.5))
+add_cpu_arch.grid(row = 0, column = 1, sticky = "ew", padx = (5, 2.5), pady = (10, 2.5))
+cpu_dropdown_menu. grid(row = 0, column = 2, sticky = "ew", padx = (2.5, 10), pady = (10, 2.5))
 working_dir_label.grid(row = 0, column = 0, sticky = "ew", padx = (10, 5), pady = 5)
-terminal.grid(row = 1, column = 0, columnspan = 2, sticky = "nsew", padx = 10, pady = 5)
-terminal_input.grid(row = 2, column = 0, columnspan = 2, sticky = "ew", padx = 10, pady = (2.5, 10))
+terminal.grid(row = 1, column = 0, columnspan = 3, sticky = "nsew", padx = 10, pady = 5)
+terminal_input.grid(row = 2, column = 0, columnspan = 3, sticky = "ew", padx = 10, pady = (2.5, 10))
 
 # End of main loop
 root.mainloop()
