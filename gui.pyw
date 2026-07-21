@@ -221,7 +221,7 @@ style.configure("Treeview",
                 foreground = "white",
                 fieldbackground = "#212121",
                 borderwidth = 0,
-                font=("arial", 10))
+                font = ("arial", 10))
 style.configure("Treeview.Heading",
                 background = "#2a2a2a",
                 foreground = "white",
