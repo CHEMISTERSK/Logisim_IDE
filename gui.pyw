@@ -598,7 +598,7 @@ terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.g
 terminal_input.bind("<Key>", lambda event: command_history_navigation(event))
 
 if config["auto_save"] == True:
-    editor.bind("<Key>", save_active_file)      # need fix - while true not writing
+    editor.bind("<KeyRelease>", save_active_file, add = "+")
 
 
 # Root grid init
