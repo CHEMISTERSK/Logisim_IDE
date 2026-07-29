@@ -1,6 +1,6 @@
 {
     "arch": "4x8",
-    "cpu": "vn16",
+    "cpu": "vn",
     
     "address_bits": 4,
     "data_bits": 8,

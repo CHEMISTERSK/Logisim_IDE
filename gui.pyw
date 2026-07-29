@@ -6,29 +6,12 @@ from tkinter import ttk
 from tkinter import Event
 from typing import Any
 from rn_gui import rename_ as rename
-
-# Init of CTk
-root = CTk()
-root.geometry("1920x1080")
-root.title("Virtual CPU IDE")
-root.iconbitmap(f"{os.path.dirname(os.path.abspath(__file__))}\\icons\\icon.ico")
-root.after(25, lambda: root.state("zoomed"))
-
-# Variables definition (A -> Z)
-active_file = None                                                          # selected file path
-active_cpu_arch = None                                                      # selected cpu architecture
-active_dir = None                                                           # selected folder path
-command_history = []                                                        # command history buffer
-command_history_index = None                                                # command history listing index
-imbeded_commands = {"clr", "cls"}                                           # set of imbeded commands
-open_files = []                                                             # opend files tabs list
-ROOT_DIR = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()     # root directory - "C:\...\compiler\"
-work_dir = ROOT_DIR                                                         # working directory for imbeded terminal - defalt is root dir
+from add_arch_gui import new_cpu_arch as nca
 
 # Class definition 
 class file_tab(CTkFrame):
     def __init__( self, parent, name: str, path: str, content: str, on_select = None, on_close = None):
-        super().__init__(parent, fg_color = "#2b2b2b", corner_radius = 5, width = 160, height = 36)
+        super().__init__(parent, fg_color = "#1F6AA5", corner_radius = 5, width = 160, height = 36)
 
         self.name = name
         self.path = path
@@ -43,15 +26,15 @@ class file_tab(CTkFrame):
                                      corner_radius = 5,
                                      command = self.select_tab)
         
-
         self.close_button = CTkButton(self,
                                       text = "×",
+                                      font = ("arial", 18, "bold"),
                                       width = 30,
                                       corner_radius = 5,
                                       command = self.close_tab)
 
-        self.file_button.pack(side = "left")
-        self.close_button.pack(side = "left")
+        self.file_button.pack(side = "left", padx = (1.5, 0), pady = 1.5)
+        self.close_button.pack(side = "left", padx = (0, 1.5), pady = 1.5)
 
     def select_tab(self):
         if self.on_select:
@@ -62,6 +45,22 @@ class file_tab(CTkFrame):
             self.on_close(self)
 
         self.destroy()
+
+# Init of CTk
+root = CTk()
+root.title("Virtual CPU IDE")
+root.iconbitmap(f"{os.path.dirname(os.path.abspath(__file__))}\\icons\\icon.ico")
+
+# Variables definition (A -> Z)
+active_file: str = None                                                          # selected file path
+active_cpu_arch: str = None                                                      # selected cpu architecture
+active_dir: str = None                                                           # selected folder path
+command_history: list[str] = []                                                  # command history buffer
+command_history_index: int = None                                                # command history listing index
+imbeded_commands: set[str] = {"clr", "cls"}                                      # set of imbeded commands
+open_files: list[file_tab] = []                                                  # opend files tabs list
+ROOT_DIR: str = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()     # root directory - "C:\...\compiler\"
+work_dir: str = ROOT_DIR                                                         # working directory for imbeded terminal - defalt is root dir
 
 # Icon's loading (A -> Z)
 add_cpu_icon_path = Path(__file__).with_name("icons") / "add_cpu.png"
@@ -165,7 +164,7 @@ add_cpu_arch = CTkButton(terminal_frame,
                          width = 30,
                          height = 30,
                          image = add_cpu_icon,
-                         command = lambda: ...)
+                         command = lambda: (nca(), load_cpu_arch()))
 
 cpu_dropdown_menu = CTkOptionMenu(terminal_frame,
                                   width = 180,
@@ -233,9 +232,6 @@ style.map('Treeview',
 
 # Functions (A -> Z)
 def add_tab(file_path: str = None) -> file_tab | None:
-    global open_files
-    global active_file
-
     if file_path:
         file_name = file_path.split("\\")[-1]
 
@@ -405,7 +401,7 @@ def get_selected_item_path() -> None | str:
     return os.path.join(ROOT_DIR + "\\projects", *path_parts)
 
 def get_selected_path() -> str:
-    # Zistí cestu vybraného priečinka v strome
+    # Get path of selected item in tree
     selected_path = get_selected_item_path()
 
     if not selected_path:
@@ -597,8 +593,14 @@ root.bind_all("<F2>", lambda event: (rename(active_file if active_dir == None el
 terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.get()))
 terminal_input.bind("<Key>", lambda event: command_history_navigation(event))
 
-if config["auto_save"] == True:
+# Applying Configs
+root.geometry(f"{config["SCREEN_W"]}x{config["SCREEN_H"]}")
+
+if config["AUTO_SAVE"] == True:
     editor.bind("<KeyRelease>", save_active_file, add = "+")
+
+if config["ZOOMED_WINDOW"] == True:
+    root.after(25, lambda: root.state("zoomed"))
 
 
 # Root grid init

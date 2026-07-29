@@ -37,6 +37,7 @@ tempCodeRunnerFile.py
 .cache/
 
 # Project specific
-**/projects/*.txt
-outputs/
+/projects/
+/files/ide/config.json
+/outputs/
 *.c

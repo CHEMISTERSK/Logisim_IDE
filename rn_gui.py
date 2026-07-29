@@ -49,7 +49,7 @@ def rename_(path: str = None) -> tuple[str, str]:
                               hover_color = "#8a0101",
                               width = 120,
                               height = 30,
-                              command = lambda: exit(0))
+                              command = lambda: root.destroy())
 
     # Functions
     def is_file(path: str = None) -> tuple[str, bool] | None:

@@ -1,6 +1,6 @@
 {
     "arch": "4x8",
-    "cpu": "vn16",
+    "cpu": "vn",
 
     "non-op": ["END", "OUT"],
 
