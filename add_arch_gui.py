@@ -83,6 +83,7 @@ def new_cpu_arch() -> None:
 
     global address_bits, data_bits, flag_bits, op_codes_bits, ram_registers, cpu_hw_arch, configs, config_names, ins_form, spec_id
 
+    # Instruction Form preparation
     button_frame = CTkFrame(root)
 
     create_button = CTkButton(button_frame,
@@ -97,6 +98,7 @@ def new_cpu_arch() -> None:
                               hover_color = "#8a0101",
                               command = lambda: root.destroy())
 
+    # Configuration Bar Definition
     config_frame = CTkFrame(root)
 
     confirm_button = CTkButton(config_frame,
@@ -217,22 +219,21 @@ def new_cpu_arch() -> None:
         cpu_name = f"{arch}_{address_bits}x{data_bits}" + f" - {spec_id}" if spec_id != "" else ""
         hw_dep = {"arch": f"{address_bits}x{data_bits}", "cpu": arch, "address_bits": address_bits, "data_bits": data_bits, "ram_registers": 2**address_bits, "id": spec_id if spec_id != None else "NA"}
 
+        ins_table["id"] = spec_id if spec_id != "" else "NA"
         ins_table["non-op"] = no_op_ins
         ins_table["arch"] = f"{address_bits}x{data_bits}"
         ins_table["cpu"] = arch
-        ins_table["id"] = spec_id if spec_id != "" else "NA"
-
+        
         try:
-            os.mkdir(f"{os.path.dirname(os.path.abspath(__file__))}\\files\\{cpu_name}")
+            os.mkdir(f"{os.path.dirname(os.path.abspath(__file__))}\\files\\libraries\\{cpu_name}")
         except FileExistsError:
-            if spec_id == "":
-                messagebox.showerror(title = "FileExistsError:", message = "CPU already exist! For adding new one add 'Specific ID'.")
+            messagebox.showerror(title = "FileExistsError:", message = "CPU already exist! For adding new one add 'Specific ID'.")
             return None
 
-        with open(f"{os.path.dirname(os.path.abspath(__file__))}\\files\\{cpu_name}\\instructuins.json", "w") as file:
+        with open(f"{os.path.dirname(os.path.abspath(__file__))}\\files\\libraries\\{cpu_name}\\instructuins.json", "w") as file:
             json.dump(ins_table, file, indent = 4)
 
-        with open(f"{os.path.dirname(os.path.abspath(__file__))}\\files\\{cpu_name}\\hardware_dependencies.json", "w") as file:
+        with open(f"{os.path.dirname(os.path.abspath(__file__))}\\files\\libraries\\{cpu_name}\\hardware_dependencies.json", "w") as file:
             json.dump(hw_dep, file, indent = 4)
 
         with open(f"{os.path.dirname(os.path.abspath(__file__))}\\files\\ide\\libraries.json", "r+") as file:
@@ -243,6 +244,8 @@ def new_cpu_arch() -> None:
                 json.dump(content, file, indent = 4)
             else:
                 file.close()
+
+            root.destroy()
 
 
     create_config(config_names)

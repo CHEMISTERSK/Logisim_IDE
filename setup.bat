@@ -1,5 +1,3 @@
-@echo off
-
 python --version >nul 2>&1 || exit /b 1
 pip --version >nul 2>&1 || exit /b 2
 

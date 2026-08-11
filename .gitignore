@@ -33,11 +33,15 @@ wheels/
 
 # Temporary files
 tempCodeRunnerFile.py
+tempCodeRunnerFile.c
+tempCodeRunnerFile.exe
 *.log
 .cache/
 
 # Project specific
-/projects/
+/projects/**
 /files/ide/config.json
-/outputs/
+/files/libraries/**
+/outputs/bin/**
+/outputs/hex/**
 *.c

@@ -57,7 +57,7 @@ active_cpu_arch: str = None                                                     
 active_dir: str = None                                                           # selected folder path
 command_history: list[str] = []                                                  # command history buffer
 command_history_index: int = None                                                # command history listing index
-imbeded_commands: set[str] = {"clr", "cls"}                                      # set of imbeded commands
+imbeded_commands: set[str] = {"clr", "cls", "clear"}                             # set of imbeded commands
 open_files: list[file_tab] = []                                                  # opend files tabs list
 ROOT_DIR: str = f"{os.path.dirname(os.path.abspath(__file__))}".capitalize()     # root directory - "C:\...\compiler\"
 work_dir: str = ROOT_DIR                                                         # working directory for imbeded terminal - defalt is root dir
@@ -198,7 +198,7 @@ work_space = CTkFrame(root,
 
 hot_bar = CTkFrame(work_space,
                    width = 1075,
-                   height = 37)
+                   height = 42)
 
 compile_button = CTkButton(work_space,
                            image = compile_icon,
@@ -270,7 +270,7 @@ def command_execution(command: str = None) -> None:
         terminal.insert("end", f"@> {command}\n")
 
         if command in imbeded_commands:
-            if command in ["cls", "clr"]:
+            if command in ["cls", "clr", "clear"]:
                 terminal.delete("1.0", "end")
         else:
             if command.split(" ")[0] == "cd" and len(command.split(" ")) > 1:
@@ -339,9 +339,9 @@ def compilation() -> None:
 def create_file() -> None:
     selected_path = get_selected_path()
     file_path = os.path.join(selected_path, "newfile.txt")
+
     with open(file_path, "w"):
-        pass
-    refresh_tree()
+        refresh_tree()
 
 def create_folder() -> None:
     selected_path = get_selected_path()
@@ -454,12 +454,9 @@ def load_config() -> dict[str, Any]:
         return json.load(config_file)
 
 def load_cpu_arch() -> None:
-    try:
-        with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "r") as file:
-            cpu_dropdown_menu.configure(values = json.load(file))
-    except FileNotFoundError:
-        with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "w") as file:
-            json.dump("")
+    with open(f"{ROOT_DIR}\\files\\ide\\libraries.json", "r") as file:
+        content = json.load(file)
+        cpu_dropdown_menu.configure(values = content if content != [] else ["None"])
 
 def open_node(event: Event = None) -> None:
     node = tree.focus()
@@ -586,8 +583,12 @@ config = load_config()
 tree.bind("<<TreeviewOpen>>", open_node)
 tree.bind("<<TreeviewSelect>>", update_active_file)
 
+root.bind_all("<Control-r>", refresh_tree)
+root.bind_all("<Control-R>", refresh_tree)
+
 root.bind_all("<Control-s>", save_active_file)
 root.bind_all("<Control-S>", save_active_file)
+
 root.bind_all("<F2>", lambda event: (rename(active_file if active_dir == None else active_dir), refresh_tree()))
 
 terminal_input.bind("<Return>", lambda event: command_execution(terminal_input.get()))

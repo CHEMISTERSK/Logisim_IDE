@@ -92,6 +92,7 @@ def rename_(path: str = None) -> tuple[str, str]:
 
         root.destroy()
 
+
     if path is None:
         root.destroy()
 
@@ -130,4 +131,5 @@ def rename_(path: str = None) -> tuple[str, str]:
     cancel_button.grid(row = 0, column = 1, padx = 5, pady = 5)
 
     root.wait_window()
+    
     return (path, new_file_path if new_dir_path == None else new_dir_path)
