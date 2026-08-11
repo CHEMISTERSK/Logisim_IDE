@@ -48,7 +48,7 @@ pip install customtkinter pillow
 python gui.pyw
 ```
 
-On Windows, you can also launch it by double-clicking [gui.pyw](gui.pyw).
+On Windows, you can also launch it by double-clicking [logisim_ide.exe](logisim_ide.exe).
 
 ## Usage
 
