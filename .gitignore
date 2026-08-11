@@ -41,6 +41,7 @@ tempCodeRunnerFile.exe
 # Project specific
 /projects/**
 /files/ide/config.json
+/files/ide/libraries.json
 /files/libraries/**
 /outputs/bin/**
 /outputs/hex/**
