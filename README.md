@@ -36,19 +36,14 @@ The project combines a simple graphical editor, a project explorer, an embedded 
 ## Installation
 
 1. Clone or download this repository.
-2. Install dependencies:
 
-```bash
-pip install customtkinter pillow
-```
-
-3. Run the IDE:
+2. Run the IDE:
 
 ```bash
 python gui.pyw
 ```
 
-On Windows, you can also launch it by double-clicking [logisim_ide.exe](logisim_ide.exe).
+Or you can also launch it by double-clicking [logisim_ide.exe](logisim_ide.exe) for starting setup for packages.
 
 ## Usage
 

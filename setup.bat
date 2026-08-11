@@ -7,4 +7,10 @@ if %errorlevel% neq 0 (
     python -c "import customtkinter" >nul 2>&1 || exit /b 3
 )
 
+python -c "import PIL" >nul 2>&1
+if %errorlevel% neq 0 (
+    pip install pillow >nul 2>&1
+    python -c "import PIL" >nul 2>&1 || exit /b 3
+)
+
 exit /b 0
