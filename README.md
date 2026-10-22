@@ -40,10 +40,8 @@ The project combines a simple graphical editor, a project explorer, an embedded 
 2. Run the IDE:
 
 ```bash
-python gui.pyw
+logisim_ide.exe
 ```
-
-Or you can also launch it by double-clicking [logisim_ide.exe](logisim_ide.exe) for starting setup for packages.
 
 ## Usage
 
